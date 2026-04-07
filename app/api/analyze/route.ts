@@ -72,7 +72,8 @@ Return only valid JSON with this exact shape:
     }
 
     const parsed = JSON.parse(text);
-
+    parsed.debug = "live-ai-route";
+    
     return NextResponse.json(parsed);
   } catch (error) {
     console.error("Analyze route error:", error);

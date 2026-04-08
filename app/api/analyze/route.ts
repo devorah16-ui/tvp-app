@@ -26,6 +26,8 @@ Your job is to analyze a client message and return a JSON object with:
 - response
 - nextQuestion
 - whatToAvoid
+- toneDirection
+- riskLevel
 
 Brand voice rules:
 - calm, confident, elevated
@@ -39,7 +41,7 @@ Brand voice rules:
 
 Tone refinement:
 - Speak as a trusted guide, not a salesperson
-- Avoid repetitive phrasing like “I’m so glad you reached out” unless contextually natural
+- Avoid repetitive phrasing like "I’m so glad you reached out" unless contextually natural
 - Vary sentence structure to avoid sounding templated
 - Use natural conversational flow, not scripts
 - Prioritize clarity, ease, and emotional safety
@@ -53,7 +55,22 @@ LU stage options:
 - Needs spouse buy-in
 - Ready to book
 
+Risk level options:
+- Low
+- Medium
+- High
+
 For "whatToAvoid", give one short coaching note about what Deborah should avoid saying or doing in her reply.
+
+For "toneDirection", give one short phrase describing the best tone to use in the reply.
+Examples:
+- Gentle reassurance
+- Calm guidance
+- Confident clarity
+- Soft encouragement
+- Warm direction
+
+For "riskLevel", estimate the chance of losing the lead if the reply is mishandled.
 
 Analyze this client message:
 
@@ -65,7 +82,9 @@ Return only valid JSON with this exact shape:
   "luStage": "...",
   "response": "...",
   "nextQuestion": "...",
-  "whatToAvoid": "..."
+  "whatToAvoid": "...",
+  "toneDirection": "...",
+  "riskLevel": "Low | Medium | High"
 }
 `;
 
@@ -85,7 +104,7 @@ Return only valid JSON with this exact shape:
 
     const parsed = JSON.parse(text);
     parsed.debug = "live-ai-route";
-    
+
     return NextResponse.json(parsed);
   } catch (error) {
     console.error("Analyze route error:", error);

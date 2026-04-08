@@ -8,6 +8,8 @@ type AnalyzeResult = {
   response: string;
   nextQuestion: string;
   whatToAvoid?: string;
+  toneDirection?: string;
+  riskLevel?: string;
   originalMessage?: string;
   debug?: string;
 };
@@ -165,6 +167,27 @@ export default function DashboardPage() {
                   : "Coaching guidance will appear here."}
               </p>
             </div>
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                Tone Direction
+              </h2>
+            <p className="mt-3 text-stone-100">
+             {result && result.toneDirection
+            ? result.toneDirection
+            : "Tone guidance will appear here."}
+             </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+            <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+             Risk Level
+            </h2>
+           <p className="mt-3 text-stone-100">
+            {result && result.riskLevel
+           ? result.riskLevel
+           : "Risk level will appear here."}
+           </p>
+           </div>
           </section>
         </div>
       </div>

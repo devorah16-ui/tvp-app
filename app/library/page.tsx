@@ -17,6 +17,17 @@ type SavedResponse = {
 
 const STORAGE_KEY = "tvp-response-library";
 
+function parseTags(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 export default function ResponseLibraryPage() {
   const [items, setItems] = useState<SavedResponse[]>([]);
   const [sourceFilter, setSourceFilter] = useState<
@@ -25,6 +36,8 @@ export default function ResponseLibraryPage() {
   const [stageFilter, setStageFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTags, setEditingTags] = useState("");
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -85,16 +98,27 @@ export default function ResponseLibraryPage() {
     });
   }, [items, sourceFilter, stageFilter, tagFilter, searchTerm]);
 
-  function handleDelete(id: string) {
-    const next = items.filter((item) => item.id !== id);
+  function persistItems(next: SavedResponse[]) {
     setItems(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }
+
+  function handleDelete(id: string) {
+    const next = items.filter((item) => item.id !== id);
+    persistItems(next);
+
+    if (editingId === id) {
+      setEditingId(null);
+      setEditingTags("");
+    }
   }
 
   function handleClearAll() {
     if (!confirm("Clear all saved responses?")) return;
     setItems([]);
     localStorage.removeItem(STORAGE_KEY);
+    setEditingId(null);
+    setEditingTags("");
   }
 
   async function handleCopy(text: string) {
@@ -109,33 +133,51 @@ export default function ResponseLibraryPage() {
     setSearchTerm("");
   }
 
+  function handleStartEdit(item: SavedResponse) {
+    setEditingId(item.id);
+    setEditingTags((item.tags || []).join(", "));
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setEditingTags("");
+  }
+
+  function handleSaveTags(id: string) {
+    const nextTags = parseTags(editingTags);
+    const next = items.map((item) =>
+      item.id === id ? { ...item, tags: nextTags } : item
+    );
+    persistItems(next);
+    setEditingId(null);
+    setEditingTags("");
+  }
+
   return (
-    <main className="min-h-screen bg-stone-950 text-white px-6 py-10">
+    <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-stone-400">
-              Texas Vogue
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+            <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
+            <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
               Response Library
             </h1>
-            <p className="mt-4 max-w-2xl text-stone-300">
+            <p className="mt-4 max-w-2xl text-[#CBBFB3]">
               Save, review, and reuse your strongest client responses.
             </p>
           </div>
 
           <button
             onClick={handleClearAll}
-            className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+            className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
           >
             Clear All
           </button>
         </div>
 
-        <div className="mb-8 grid gap-4 rounded-3xl border border-stone-800 bg-stone-900/60 p-6 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-8 grid gap-4 rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 md:grid-cols-2 xl:grid-cols-5">
           <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
               Search
             </label>
             <input
@@ -143,12 +185,12 @@ export default function ResponseLibraryPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search responses..."
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
               Source
             </label>
             <select
@@ -158,7 +200,7 @@ export default function ResponseLibraryPage() {
                   e.target.value as "all" | "dashboard" | "coaching" | "scripts"
                 )
               }
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
             >
               <option value="all">All Sources</option>
               <option value="dashboard">Dashboard</option>
@@ -168,13 +210,13 @@ export default function ResponseLibraryPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
               Stage / Category
             </label>
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
             >
               <option value="all">All Stages</option>
               {stageOptions.map((stage) => (
@@ -186,13 +228,13 @@ export default function ResponseLibraryPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
               Tag
             </label>
             <select
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
             >
               <option value="all">All Tags</option>
               {tagOptions.map((tag) => (
@@ -206,20 +248,20 @@ export default function ResponseLibraryPage() {
           <div className="flex items-end">
             <button
               onClick={handleResetFilters}
-              className="w-full rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+              className="w-full rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
             >
               Reset Filters
             </button>
           </div>
         </div>
 
-        <div className="mb-6 text-sm text-stone-400">
+        <div className="mb-6 text-sm text-[#9D8F83]">
           Showing {filteredItems.length} of {items.length} saved response
           {items.length === 1 ? "" : "s"}.
         </div>
 
         {filteredItems.length === 0 ? (
-          <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-8 text-stone-300">
+          <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-8 text-[#CBBFB3]">
             No saved responses match your filters.
           </div>
         ) : (
@@ -227,108 +269,151 @@ export default function ResponseLibraryPage() {
             {filteredItems
               .slice()
               .reverse()
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-stone-400">
-                        {item.source === "dashboard"
-                          ? "Dashboard"
-                          : item.source === "coaching"
-                          ? "Coaching"
-                          : "Scripts"}
-                      </p>
-                      <h2 className="mt-2 text-2xl font-medium">{item.title}</h2>
-                      <p className="mt-2 text-sm text-stone-400">
-                        Saved {new Date(item.createdAt).toLocaleString()}
-                      </p>
-                    </div>
+              .map((item) => {
+                const isEditing = editingId === item.id;
 
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleCopy(item.response)}
-                        className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
-                      >
-                        Copy
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.25em] text-[#9D8F83]">
+                          {item.source === "dashboard"
+                            ? "Dashboard"
+                            : item.source === "coaching"
+                            ? "Coaching"
+                            : "Scripts"}
+                        </p>
+                        <h2 className="mt-2 font-display text-2xl text-[#F3EDE6]">
+                          {item.title}
+                        </h2>
+                        <p className="mt-2 text-sm text-[#9D8F83]">
+                          Saved {new Date(item.createdAt).toLocaleString()}
+                        </p>
+                      </div>
 
-                  {(item.tags || []).length > 0 ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {item.tags!.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-stone-700 px-3 py-1 text-xs text-stone-300"
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => handleCopy(item.response)}
+                          className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                         >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
+                          Copy
+                        </button>
 
-                  <div className="mt-5 grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Stage / Category
-                      </p>
-                      <p className="mt-2 text-stone-100">
-                        {item.stage || "—"}
-                      </p>
+                        {!isEditing ? (
+                          <button
+                            onClick={() => handleStartEdit(item)}
+                            className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
+                          >
+                            Edit Tags
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleSaveTags(item.id)}
+                              className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
+                            >
+                              Save Tags
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Tone
-                      </p>
-                      <p className="mt-2 text-stone-100">
-                        {item.toneDirection || "—"}
-                      </p>
+                    {!isEditing ? (
+                      (item.tags || []).length > 0 ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {item.tags!.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-full border border-[#4A3E36] px-3 py-1 text-xs text-[#CBBFB3]"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-4 text-sm text-[#9D8F83]">
+                          No tags added yet.
+                        </div>
+                      )
+                    ) : (
+                      <div className="mt-4">
+                        <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
+                          Edit Tags
+                        </label>
+                        <input
+                          type="text"
+                          value={editingTags}
+                          onChange={(e) => setEditingTags(e.target.value)}
+                          placeholder="spouse, price, overwhelmed"
+                          className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
+                        />
+                        <p className="mt-2 text-sm text-[#9D8F83]">
+                          Separate tags with commas.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                      <InfoCard label="Stage / Category" value={item.stage || "—"} />
+                      <InfoCard label="Tone" value={item.toneDirection || "—"} />
+                      <InfoCard label="Risk" value={item.riskLevel || "—"} />
                     </div>
 
-                    <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Risk
-                      </p>
-                      <p className="mt-2 text-stone-100">
-                        {item.riskLevel || "—"}
-                      </p>
+                    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                      <ContentCard
+                        label="Client Message"
+                        value={item.clientMessage}
+                      />
+                      <ContentCard
+                        label="Saved Response"
+                        value={item.response}
+                      />
                     </div>
                   </div>
-
-                  <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Client Message
-                      </p>
-                      <p className="mt-2 whitespace-pre-line text-stone-100">
-                        {item.clientMessage}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Saved Response
-                      </p>
-                      <p className="mt-2 whitespace-pre-line text-stone-100">
-                        {item.response}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#4A3E36] bg-[#171311] p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
+        {label}
+      </p>
+      <p className="mt-2 text-[#F3EDE6]">{value}</p>
+    </div>
+  );
+}
+
+function ContentCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#4A3E36] bg-[#171311] p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
+        {label}
+      </p>
+      <p className="mt-2 whitespace-pre-line text-[#F3EDE6]">{value}</p>
+    </div>
   );
 }

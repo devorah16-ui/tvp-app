@@ -16,28 +16,22 @@ export default function AppNav() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-800 bg-stone-950/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[#4A3E36] bg-[#171311]/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-        
-        {/* Left side: Back + Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200 transition hover:border-stone-500 hover:text-white"
+            className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
           >
             Back
           </button>
 
-          <Link
-            href="/"
-            className="text-sm uppercase tracking-[0.35em] text-stone-300 hover:text-white transition"
-          >
-            Texas Vogue
+          <Link href="/" className="font-display text-sm text-[#F3EDE6]">
+            TEXAS VOGUE
           </Link>
         </div>
 
-        {/* Right side: Navigation */}
-        <nav className="flex flex-wrap items-center gap-2">
+        <nav className="flex flex-wrap gap-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
@@ -47,8 +41,8 @@ export default function AppNav() {
                 href={item.href}
                 className={`rounded-2xl px-4 py-2 text-sm transition ${
                   isActive
-                    ? "bg-white text-black"
-                    : "border border-stone-700 text-stone-200 hover:border-stone-500 hover:text-white"
+                    ? "bg-[#C6A978] text-black"
+                    : "border border-[#4A3E36] text-[#CBBFB3] hover:border-[#C6A978] hover:text-white"
                 }`}
               >
                 {item.label}

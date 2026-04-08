@@ -91,9 +91,7 @@ export default function CoachingPage() {
 
     try {
       const parsed = JSON.parse(raw) as { title?: string; content?: string };
-      if (parsed?.content) {
-        setYourResponse(parsed.content);
-      }
+      if (parsed?.content) setYourResponse(parsed.content);
       localStorage.removeItem(COACHING_PREFILL_KEY);
     } catch (error) {
       console.error("Failed to load coaching prefill:", error);
@@ -139,10 +137,7 @@ export default function CoachingPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Evaluation failed.");
-      }
+      if (!res.ok) throw new Error(data.error || "Evaluation failed.");
 
       setEvaluation({
         score: data.score || "—",
@@ -199,16 +194,14 @@ export default function CoachingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 text-white px-6 py-10">
+    <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10">
-          <p className="text-sm uppercase tracking-[0.35em] text-stone-400">
-            Texas Vogue
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+          <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
+          <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
             Coaching
           </h1>
-          <p className="mt-4 max-w-2xl text-stone-300">
+          <p className="mt-4 max-w-2xl text-[#CBBFB3]">
             Practice real client situations, refine your language, and coach
             yourself before responding live.
           </p>
@@ -216,8 +209,8 @@ export default function CoachingPage() {
 
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <section className="space-y-6">
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
                 Choose Coaching Scenario
               </label>
 
@@ -226,7 +219,7 @@ export default function CoachingPage() {
                 onChange={(e) =>
                   setSelectedScenario(e.target.value as ScenarioKey)
                 }
-                className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+                className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
               >
                 <option value="overwhelmed">Overwhelmed Lead</option>
                 <option value="spouse">Spouse Hesitation</option>
@@ -236,14 +229,14 @@ export default function CoachingPage() {
 
               <button
                 onClick={handleLoadScenario}
-                className="mt-4 rounded-2xl bg-white px-5 py-3 font-medium text-black"
+                className="mt-4 rounded-2xl bg-[#C6A978] px-5 py-3 font-medium text-black transition hover:bg-[#D7BB8C]"
               >
                 Load Scenario
               </button>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
                 Your Response
               </label>
 
@@ -251,10 +244,10 @@ export default function CoachingPage() {
                 value={yourResponse}
                 onChange={(e) => setYourResponse(e.target.value)}
                 placeholder="Write how you would respond to this client..."
-                className="min-h-[220px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
+                className="min-h-[220px] w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-4 text-base text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
               />
 
-              <label className="mt-4 mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+              <label className="mb-3 mt-4 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
                 Custom Tags
               </label>
 
@@ -263,10 +256,10 @@ export default function CoachingPage() {
                 value={customTags}
                 onChange={(e) => setCustomTags(e.target.value)}
                 placeholder="spouse, price, discovery"
-                className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
               />
 
-              <p className="mt-2 text-sm text-stone-400">
+              <p className="mt-2 text-sm text-[#9D8F83]">
                 Separate tags with commas.
               </p>
 
@@ -274,21 +267,21 @@ export default function CoachingPage() {
                 <button
                   onClick={handleEvaluate}
                   disabled={loading}
-                  className="rounded-2xl bg-white px-5 py-3 font-medium text-black disabled:opacity-60"
+                  className="rounded-2xl bg-[#C6A978] px-5 py-3 font-medium text-black transition hover:bg-[#D7BB8C] disabled:opacity-60"
                 >
                   {loading ? "Evaluating..." : "Evaluate My Response"}
                 </button>
 
                 <button
                   onClick={handleClear}
-                  className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                  className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                 >
                   Clear
                 </button>
 
                 <button
                   onClick={handleSave}
-                  className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                  className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                 >
                   Save Revised Response
                 </button>
@@ -297,77 +290,45 @@ export default function CoachingPage() {
           </section>
 
           <section className="space-y-4">
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Scenario
-              </h2>
-              <p className="mt-3 text-lg">
-                {loadedTitle || "No scenario loaded yet."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Coaching Type
-              </h2>
-              <p className="mt-3 text-lg">{loadedType || "Waiting..."}</p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Client Message
-              </h2>
-              <p className="mt-3 whitespace-pre-line text-stone-100">
-                {loadedMessage || "Load a scenario to see the client message."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Coaching Note
-              </h2>
-              <p className="mt-3 text-stone-100">
-                {loadedCoaching || "Coaching guidance will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Score
-              </h2>
-              <p className="mt-3 text-lg">
-                {evaluation?.score || "Your score will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                What Worked
-              </h2>
-              <p className="mt-3 text-stone-100">
-                {evaluation?.whatWorked || "Feedback will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                What To Improve
-              </h2>
-              <p className="mt-3 text-stone-100">
-                {evaluation?.whatToImprove ||
-                  "Improvement notes will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Revised Response
-              </h2>
-              <p className="mt-3 whitespace-pre-line text-stone-100">
-                {evaluation?.revisedResponse ||
-                  "A revised response will appear here."}
-              </p>
-            </div>
+            {[
+              ["Scenario", loadedTitle || "No scenario loaded yet."],
+              ["Coaching Type", loadedType || "Waiting..."],
+              [
+                "Client Message",
+                loadedMessage || "Load a scenario to see the client message.",
+              ],
+              [
+                "Coaching Note",
+                loadedCoaching || "Coaching guidance will appear here.",
+              ],
+              ["Score", evaluation?.score || "Your score will appear here."],
+              [
+                "What Worked",
+                evaluation?.whatWorked || "Feedback will appear here.",
+              ],
+              [
+                "What To Improve",
+                evaluation?.whatToImprove ||
+                  "Improvement notes will appear here.",
+              ],
+              [
+                "Revised Response",
+                evaluation?.revisedResponse ||
+                  "A revised response will appear here.",
+              ],
+            ].map(([title, value]) => (
+              <div
+                key={title}
+                className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5"
+              >
+                <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+                  {title}
+                </h2>
+                <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">
+                  {value}
+                </p>
+              </div>
+            ))}
           </section>
         </div>
       </div>

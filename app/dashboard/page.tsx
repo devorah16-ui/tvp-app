@@ -62,10 +62,17 @@ export default function DashboardPage() {
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Analysis failed.");
+      }
+
       setResult(data);
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      alert(
+        error instanceof Error ? error.message : "Something went wrong."
+      );
     } finally {
       setLoading(false);
     }
@@ -121,22 +128,24 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 text-white px-6 py-10">
+    <main className="min-h-screen bg-[#171311] text-[#F3EDE6] px-6 py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-[0.3em] text-stone-400">
-            Texas Vogue
+          <p className="font-display text-sm text-[#CBBFB3]">
+            TEXAS VOGUE
           </p>
-          <h1 className="mt-2 text-4xl font-semibold">Lead Analyzer</h1>
-          <p className="mt-3 max-w-2xl text-stone-300">
+          <h1 className="mt-2 font-display text-4xl text-[#F3EDE6]">
+            Lead Analyzer
+          </h1>
+          <p className="mt-3 max-w-2xl text-[#CBBFB3]">
             Analyze client language, identify emotional need, and generate a
             guided response in the Texas Vogue tone.
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6 shadow-2xl">
-            <label className="mb-3 block text-sm font-medium text-stone-200">
+          <section className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 shadow-2xl">
+            <label className="mb-3 block text-sm font-medium text-[#F3EDE6]">
               Client Message
             </label>
 
@@ -144,10 +153,10 @@ export default function DashboardPage() {
               value={clientMessage}
               onChange={(e) => setClientMessage(e.target.value)}
               placeholder="Paste the client message here..."
-              className="min-h-[220px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
+              className="min-h-[220px] w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-4 text-base text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
             />
 
-            <label className="mt-4 mb-3 block text-sm font-medium text-stone-200">
+            <label className="mb-3 mt-4 block text-sm font-medium text-[#F3EDE6]">
               Custom Tags
             </label>
 
@@ -156,10 +165,10 @@ export default function DashboardPage() {
               value={customTags}
               onChange={(e) => setCustomTags(e.target.value)}
               placeholder="spouse, hesitant, atelier"
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
             />
 
-            <p className="mt-2 text-sm text-stone-400">
+            <p className="mt-2 text-sm text-[#9D8F83]">
               Separate tags with commas.
             </p>
 
@@ -167,21 +176,21 @@ export default function DashboardPage() {
               <button
                 onClick={handleAnalyze}
                 disabled={loading}
-                className="rounded-2xl bg-white px-5 py-3 font-medium text-black disabled:opacity-60"
+                className="rounded-2xl bg-[#C6A978] px-5 py-3 font-medium text-black transition hover:bg-[#D7BB8C] disabled:opacity-60"
               >
                 {loading ? "Analyzing..." : "Analyze Message"}
               </button>
 
               <button
                 onClick={handleClear}
-                className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
               >
                 Clear
               </button>
 
               <button
                 onClick={handleSave}
-                className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
               >
                 Save to Library
               </button>
@@ -189,92 +198,80 @@ export default function DashboardPage() {
           </section>
 
           <section className="space-y-4">
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Emotional Need
               </h2>
-              <p className="mt-3 text-lg">
-                {result && result.emotionalNeed
-                  ? result.emotionalNeed
-                  : "Waiting for analysis..."}
+              <p className="mt-3 text-lg text-[#F3EDE6]">
+                {result?.emotionalNeed || "Waiting for analysis..."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Decision Stage
               </h2>
-              <p className="mt-3 text-lg">
-                {result && result.decisionStage
-                  ? result.decisionStage
-                  : "Waiting for analysis..."}
+              <p className="mt-3 text-lg text-[#F3EDE6]">
+                {result?.decisionStage || "Waiting for analysis..."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                   Suggested Response
                 </h2>
                 <button
                   onClick={handleCopy}
-                  className="rounded-xl border border-stone-700 px-3 py-2 text-sm text-stone-200"
+                  className="rounded-xl border border-[#4A3E36] px-3 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                 >
                   Copy
                 </button>
               </div>
-              <p className="mt-3 whitespace-pre-line text-stone-100">
-                {result && result.response
-                  ? result.response
-                  : "Your suggested response will appear here."}
+
+              <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">
+                {result?.response || "Your suggested response will appear here."}
               </p>
 
-              {result && result.debug ? (
-                <p className="mt-2 text-xs text-stone-500">{result.debug}</p>
+              {result?.debug ? (
+                <p className="mt-2 text-xs text-[#9D8F83]">{result.debug}</p>
               ) : null}
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Next Question
               </h2>
-              <p className="mt-3 text-stone-100">
-                {result && result.nextQuestion
-                  ? result.nextQuestion
-                  : "Your next guiding question will appear here."}
+              <p className="mt-3 text-[#F3EDE6]">
+                {result?.nextQuestion ||
+                  "Your next guiding question will appear here."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 What To Avoid
               </h2>
-              <p className="mt-3 text-stone-100">
-                {result && result.whatToAvoid
-                  ? result.whatToAvoid
-                  : "Coaching guidance will appear here."}
+              <p className="mt-3 text-[#F3EDE6]">
+                {result?.whatToAvoid || "Coaching guidance will appear here."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Tone Direction
               </h2>
-              <p className="mt-3 text-stone-100">
-                {result && result.toneDirection
-                  ? result.toneDirection
-                  : "Tone guidance will appear here."}
+              <p className="mt-3 text-[#F3EDE6]">
+                {result?.toneDirection || "Tone guidance will appear here."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Risk Level
               </h2>
-              <p className="mt-3 text-stone-100">
-                {result && result.riskLevel
-                  ? result.riskLevel
-                  : "Risk level will appear here."}
+              <p className="mt-3 text-[#F3EDE6]">
+                {result?.riskLevel || "Risk level will appear here."}
               </p>
             </div>
           </section>

@@ -21,7 +21,6 @@ Positioning the Value:
 Soft Next Step:
 “If it would be helpful, I can walk you through what the experience typically looks like and help you decide whether it feels like the right fit for what you’re envisioning.”`,
   },
-
   heirloom: {
     title: "Heirloom Script",
     category: "Family + Children + Milestone Portraits",
@@ -39,7 +38,6 @@ Positioning the Value:
 Soft Next Step:
 “If you’d like, I can walk you through what the session experience looks like and help you see what would make the most sense for your family.”`,
   },
-
   discovery: {
     title: "Discovery Call Script",
     category: "Consultation + Client Guidance",
@@ -63,7 +61,6 @@ Transition:
 Close Gently:
 “If it feels aligned, the next step would simply be choosing a date and moving into the planning process together.”`,
   },
-
   objections: {
     title: "Objection Handling",
     category: "Reassurance + Decision Support",
@@ -81,7 +78,6 @@ Overwhelm:
 Timing:
 “That makes sense too. Sometimes the best next step is simply getting clarity now, and then deciding on timing once it feels right.”`,
   },
-
   booking: {
     title: "Booking + Next Step",
     category: "Moving Forward",
@@ -177,9 +173,7 @@ export default function ScriptsPage() {
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "adapt-script",
           clientMessage: "adapt-script-request",
@@ -190,10 +184,7 @@ export default function ScriptsPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Adaptation failed.");
-      }
+      if (!res.ok) throw new Error(data.error || "Adaptation failed.");
 
       setAdaptResult({
         adaptedResponse:
@@ -218,9 +209,11 @@ export default function ScriptsPage() {
       return;
     }
 
-    const autoTags = [activeScript.title, activeScript.category, "adapted-script"].filter(
-      Boolean
-    );
+    const autoTags = [
+      activeScript.title,
+      activeScript.category,
+      "adapted-script",
+    ].filter(Boolean);
 
     const mergedTags = Array.from(
       new Set([...autoTags, ...parseCustomTags(customTags)])
@@ -246,16 +239,14 @@ export default function ScriptsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 text-white px-6 py-10">
+    <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
-          <p className="text-sm uppercase tracking-[0.35em] text-stone-400">
-            Texas Vogue
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+          <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
+          <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
             Script Library
           </h1>
-          <p className="mt-4 max-w-2xl text-stone-300">
+          <p className="mt-4 max-w-2xl text-[#CBBFB3]">
             Keep your foundational guidance, objections, consultation language,
             and next-step phrasing in one place.
           </p>
@@ -273,28 +264,30 @@ export default function ScriptsPage() {
                   }}
                   className={`w-full rounded-3xl border p-5 text-left transition ${
                     selectedScript === key
-                      ? "border-stone-500 bg-stone-800/90"
-                      : "border-stone-800 bg-stone-900/60 hover:border-stone-700"
+                      ? "border-[#C6A978] bg-[#2B2420]"
+                      : "border-[#4A3E36] bg-[#221C19] hover:border-[#C6A978]"
                   }`}
                 >
-                  <p className="text-xs uppercase tracking-[0.25em] text-stone-400">
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#9D8F83]">
                     {script.category}
                   </p>
-                  <h2 className="mt-2 text-2xl font-medium">{script.title}</h2>
-                  <p className="mt-3 text-stone-300">{script.description}</p>
+                  <h2 className="mt-2 font-display text-2xl text-[#F3EDE6]">
+                    {script.title}
+                  </h2>
+                  <p className="mt-3 text-[#CBBFB3]">{script.description}</p>
                 </button>
               )
             )}
           </section>
 
           <section className="space-y-6">
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                  <p className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                     {activeScript.category}
                   </p>
-                  <h2 className="mt-2 text-3xl font-medium">
+                  <h2 className="mt-2 font-display text-3xl text-[#F3EDE6]">
                     {activeScript.title}
                   </h2>
                 </div>
@@ -302,29 +295,29 @@ export default function ScriptsPage() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={handleCopy}
-                    className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
+                    className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                   >
                     Copy Script
                   </button>
 
                   <button
                     onClick={handleUseInCoaching}
-                    className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black"
+                    className="rounded-2xl bg-[#C6A978] px-4 py-2 text-sm font-medium text-black transition hover:bg-[#D7BB8C]"
                   >
                     Use in Coaching
                   </button>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-3xl border border-stone-800 bg-stone-950/60 p-6">
-                <p className="whitespace-pre-line leading-8 text-stone-100">
+              <div className="mt-6 rounded-3xl border border-[#4A3E36] bg-[#171311] p-6">
+                <p className="whitespace-pre-line leading-8 text-[#F3EDE6]">
                   {activeScript.content}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
                 Client Message
               </label>
 
@@ -332,10 +325,10 @@ export default function ScriptsPage() {
                 value={clientMessage}
                 onChange={(e) => setClientMessage(e.target.value)}
                 placeholder="Paste a real client message here to adapt this script..."
-                className="min-h-[180px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
+                className="min-h-[180px] w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-4 text-base text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
               />
 
-              <label className="mt-4 mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+              <label className="mb-3 mt-4 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
                 Custom Tags
               </label>
 
@@ -344,10 +337,10 @@ export default function ScriptsPage() {
                 value={customTags}
                 onChange={(e) => setCustomTags(e.target.value)}
                 placeholder="spouse, atelier, objection"
-                className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+                className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
               />
 
-              <p className="mt-2 text-sm text-stone-400">
+              <p className="mt-2 text-sm text-[#9D8F83]">
                 Separate tags with commas.
               </p>
 
@@ -355,7 +348,7 @@ export default function ScriptsPage() {
                 <button
                   onClick={handleAdapt}
                   disabled={loading}
-                  className="rounded-2xl bg-white px-5 py-3 font-medium text-black disabled:opacity-60"
+                  className="rounded-2xl bg-[#C6A978] px-5 py-3 font-medium text-black transition hover:bg-[#D7BB8C] disabled:opacity-60"
                 >
                   {loading ? "Adapting..." : "Adapt Script to Client"}
                 </button>
@@ -369,14 +362,14 @@ export default function ScriptsPage() {
                         );
                         alert("Adapted response copied.");
                       }}
-                      className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                      className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                     >
                       Copy Adapted Response
                     </button>
 
                     <button
                       onClick={handleSaveToLibrary}
-                      className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                      className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                     >
                       Save to Library
                     </button>
@@ -385,21 +378,21 @@ export default function ScriptsPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Adapted Response
               </h2>
-              <p className="mt-4 whitespace-pre-line text-stone-100">
+              <p className="mt-4 whitespace-pre-line text-[#F3EDE6]">
                 {adaptResult?.adaptedResponse ||
                   "Your adapted response will appear here."}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
                 Why It Fits
               </h2>
-              <p className="mt-4 text-stone-100">
+              <p className="mt-4 text-[#F3EDE6]">
                 {adaptResult?.whyItFits ||
                   "A short explanation of why the adaptation fits this client will appear here."}
               </p>

@@ -5,47 +5,71 @@ import { useState } from "react";
 const scenarios = {
   overwhelmed: {
     title: "Overwhelmed Lead",
-    type: "Text Inquiry",
+    type: "Emotional Reassurance",
     message:
       "I love your work so much, but I’m honestly feeling a little overwhelmed and don’t know what I’d be committing to yet.",
     coaching:
-      "This lead needs reassurance, simplicity, and a low-pressure next step. Do not rush into pricing or hard closing language.",
+      "This client needs simplicity, calm reassurance, and an easy next step. Avoid adding pressure or too many decisions too quickly.",
   },
   spouse: {
     title: "Spouse Hesitation",
-    type: "Objection Handling",
+    type: "Decision Support",
     message:
       "This is something I need to talk to my husband about first before I decide anything.",
     coaching:
-      "Acknowledge the importance of making the decision together. Keep the connection warm and offer a simple next step.",
+      "Honor the decision-making process and keep the relationship warm. Avoid sounding like you are trying to close too quickly.",
   },
   price: {
     title: "Price Hesitation",
-    type: "Objection Handling",
+    type: "Value Coaching",
     message:
       "I’m interested, but I’m worried this may be more than I can spend right now.",
     coaching:
-      "Do not become defensive. Reframe around experience, flexibility, and helping them understand the process before making decisions.",
+      "Do not defend pricing too quickly. Re-center the client on clarity, experience, and understanding the process before decisions are made.",
   },
   discovery: {
     title: "Discovery Call Practice",
-    type: "Discovery Call",
+    type: "Guided Conversation",
     message:
       "I want something special, but I’ve never done anything like this before, so I’m not really sure what to expect.",
     coaching:
-      "Slow the conversation down. Guide the client through the experience and help them feel taken care of.",
+      "Lead gently. Help the client feel safe, supported, and guided without making the conversation sound scripted.",
   },
 };
 
 type ScenarioKey = keyof typeof scenarios;
 
-export default function TestingPage() {
+type EvaluationResult = {
+  score: string;
+  whatWorked: string;
+  whatToImprove: string;
+  revisedResponse: string;
+};
+
+type SavedResponse = {
+  id: string;
+  source: "dashboard" | "coaching";
+  title: string;
+  clientMessage: string;
+  response: string;
+  stage?: string;
+  toneDirection?: string;
+  riskLevel?: string;
+  createdAt: string;
+};
+
+const STORAGE_KEY = "tvp-response-library";
+
+export default function CoachingPage() {
   const [selectedScenario, setSelectedScenario] =
     useState<ScenarioKey>("overwhelmed");
-  const [loadedMessage, setLoadedMessage] = useState("");
-  const [loadedCoaching, setLoadedCoaching] = useState("");
   const [loadedTitle, setLoadedTitle] = useState("");
   const [loadedType, setLoadedType] = useState("");
+  const [loadedMessage, setLoadedMessage] = useState("");
+  const [loadedCoaching, setLoadedCoaching] = useState("");
+  const [yourResponse, setYourResponse] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
 
   function handleLoadScenario() {
     const scenario = scenarios[selectedScenario];
@@ -53,6 +77,90 @@ export default function TestingPage() {
     setLoadedType(scenario.type);
     setLoadedMessage(scenario.message);
     setLoadedCoaching(scenario.coaching);
+    setYourResponse("");
+    setEvaluation(null);
+  }
+
+  async function handleEvaluate() {
+    if (!loadedMessage.trim()) {
+      alert("Load a scenario first.");
+      return;
+    }
+
+    if (!yourResponse.trim()) {
+      alert("Write your response first.");
+      return;
+    }
+
+    setLoading(true);
+    setEvaluation(null);
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "evaluate",
+          clientMessage: "evaluation-request",
+          clientMessageForEvaluation: loadedMessage,
+          userResponse: yourResponse,
+          coachingContext: loadedCoaching,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Evaluation failed.");
+      }
+
+      setEvaluation({
+        score: data.score || "—",
+        whatWorked: data.whatWorked || "No feedback returned.",
+        whatToImprove: data.whatToImprove || "No feedback returned.",
+        revisedResponse: data.revisedResponse || "No revised response returned.",
+      });
+    } catch (error) {
+      console.error(error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while evaluating the response."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleClear() {
+    setYourResponse("");
+    setEvaluation(null);
+  }
+
+  function handleSave() {
+    if (!loadedMessage.trim() || !evaluation?.revisedResponse) {
+      alert("Evaluate a response first.");
+      return;
+    }
+
+    const newItem: SavedResponse = {
+      id: crypto.randomUUID(),
+      source: "coaching",
+      title: loadedTitle || "Coaching Response",
+      clientMessage: loadedMessage,
+      response: evaluation.revisedResponse,
+      stage: loadedType,
+      createdAt: new Date().toISOString(),
+    };
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const existing = raw ? (JSON.parse(raw) as SavedResponse[]) : [];
+    existing.push(newItem);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+
+    alert("Saved to Response Library.");
   }
 
   return (
@@ -63,45 +171,84 @@ export default function TestingPage() {
             Texas Vogue
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-            Testing Panel
+            Coaching
           </h1>
           <p className="mt-4 max-w-2xl text-stone-300">
-            Practice lead scenarios, test responses, and refine how you guide
-            clients through hesitation, overwhelm, and uncertainty.
+            Practice real client situations, refine your language, and coach
+            yourself before responding live.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-            <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
-              Choose Scenario
-            </label>
+        <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+          <section className="space-y-6">
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+                Choose Coaching Scenario
+              </label>
 
-            <select
-              value={selectedScenario}
-              onChange={(e) =>
-                setSelectedScenario(e.target.value as ScenarioKey)
-              }
-              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
-            >
-              <option value="overwhelmed">Overwhelmed Lead</option>
-              <option value="spouse">Spouse Hesitation</option>
-              <option value="price">Price Hesitation</option>
-              <option value="discovery">Discovery Call Practice</option>
-            </select>
+              <select
+                value={selectedScenario}
+                onChange={(e) =>
+                  setSelectedScenario(e.target.value as ScenarioKey)
+                }
+                className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+              >
+                <option value="overwhelmed">Overwhelmed Lead</option>
+                <option value="spouse">Spouse Hesitation</option>
+                <option value="price">Price Hesitation</option>
+                <option value="discovery">Discovery Call Practice</option>
+              </select>
 
-            <button
-              onClick={handleLoadScenario}
-              className="mt-4 rounded-2xl bg-white px-5 py-3 font-medium text-black"
-            >
-              Load Scenario
-            </button>
+              <button
+                onClick={handleLoadScenario}
+                className="mt-4 rounded-2xl bg-white px-5 py-3 font-medium text-black"
+              >
+                Load Scenario
+              </button>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+                Your Response
+              </label>
+
+              <textarea
+                value={yourResponse}
+                onChange={(e) => setYourResponse(e.target.value)}
+                placeholder="Write how you would respond to this client..."
+                className="min-h-[220px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
+              />
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={handleEvaluate}
+                  disabled={loading}
+                  className="rounded-2xl bg-white px-5 py-3 font-medium text-black disabled:opacity-60"
+                >
+                  {loading ? "Evaluating..." : "Evaluate My Response"}
+                </button>
+
+                <button
+                  onClick={handleClear}
+                  className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                >
+                  Clear
+                </button>
+
+                <button
+                  onClick={handleSave}
+                  className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                >
+                  Save Revised Response
+                </button>
+              </div>
+            </div>
           </section>
 
           <section className="space-y-4">
             <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
               <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Scenario Title
+                Scenario
               </h2>
               <p className="mt-3 text-lg">
                 {loadedTitle || "No scenario loaded yet."}
@@ -110,11 +257,9 @@ export default function TestingPage() {
 
             <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
               <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                Scenario Type
+                Coaching Type
               </h2>
-              <p className="mt-3 text-lg">
-                {loadedType || "Waiting..."}
-              </p>
+              <p className="mt-3 text-lg">{loadedType || "Waiting..."}</p>
             </div>
 
             <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
@@ -131,7 +276,45 @@ export default function TestingPage() {
                 Coaching Note
               </h2>
               <p className="mt-3 text-stone-100">
-                {loadedCoaching || "Your coaching notes will appear here."}
+                {loadedCoaching || "Coaching guidance will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                Score
+              </h2>
+              <p className="mt-3 text-lg">
+                {evaluation?.score || "Your score will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                What Worked
+              </h2>
+              <p className="mt-3 text-stone-100">
+                {evaluation?.whatWorked || "Feedback will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                What To Improve
+              </h2>
+              <p className="mt-3 text-stone-100">
+                {evaluation?.whatToImprove ||
+                  "Improvement notes will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                Revised Response
+              </h2>
+              <p className="mt-3 whitespace-pre-line text-stone-100">
+                {evaluation?.revisedResponse ||
+                  "A revised response will appear here."}
               </p>
             </div>
           </section>

@@ -9,12 +9,73 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const clientMessage = body.clientMessage ?? "";
+    const mode = body.mode ?? "analyze";
 
     if (!clientMessage.trim()) {
       return NextResponse.json(
         { error: "Client message is required." },
         { status: 400 }
       );
+    }
+
+    if (mode === "evaluate") {
+      const prompt = `
+You are a luxury client communication coach for Texas Vogue Photography.
+
+Your job is to evaluate Deborah's draft response to a potential client.
+
+Client message:
+"${body.clientMessageForEvaluation ?? ""}"
+
+Deborah's response:
+"${body.userResponse ?? ""}"
+
+Coaching context:
+"${body.coachingContext ?? ""}"
+
+Brand voice rules:
+- calm, confident, elevated
+- warm but never salesy
+- reassuring and guiding
+- luxury, editorial, heirloom-focused
+- never pushy
+- natural, not generic
+- clear, emotionally intelligent, and easy to follow
+
+Evaluation guidance:
+- Score the response from 1 to 10
+- Reward warmth, clarity, emotional attunement, confidence, and guidance
+- Penalize pressure, generic language, defensiveness, overexplaining, or weak next steps
+- "whatWorked" should be concise and specific
+- "whatToImprove" should be constructive and practical
+- "revisedResponse" should sound like Deborah at her best: refined, warm, calm, natural, and confident
+- The revised response should feel helpful and human, not scripted
+
+Return only valid JSON with this exact shape:
+{
+  "score": "1-10",
+  "whatWorked": "...",
+  "whatToImprove": "...",
+  "revisedResponse": "..."
+}
+`;
+
+      const response = await client.responses.create({
+        model: "gpt-5.4",
+        input: prompt,
+      });
+
+      const text = response.output_text;
+
+      if (!text) {
+        return NextResponse.json(
+          { error: "No output returned from model." },
+          { status: 500 }
+        );
+      }
+
+      const parsed = JSON.parse(text);
+      return NextResponse.json(parsed);
     }
 
     const prompt = `
@@ -129,7 +190,7 @@ Return only valid JSON with this exact shape:
     console.error("Analyze route error:", error);
 
     return NextResponse.json(
-      { error: "Something went wrong while analyzing the message." },
+      { error: "Something went wrong while processing the request." },
       { status: 500 }
     );
   }

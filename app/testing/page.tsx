@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const scenarios = {
   overwhelmed: {
@@ -59,6 +59,7 @@ type SavedResponse = {
 };
 
 const STORAGE_KEY = "tvp-response-library";
+const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
 
 export default function CoachingPage() {
   const [selectedScenario, setSelectedScenario] =
@@ -71,13 +72,27 @@ export default function CoachingPage() {
   const [loading, setLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
 
+  useEffect(() => {
+    const raw = localStorage.getItem(COACHING_PREFILL_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as { title?: string; content?: string };
+      if (parsed?.content) {
+        setYourResponse(parsed.content);
+      }
+      localStorage.removeItem(COACHING_PREFILL_KEY);
+    } catch (error) {
+      console.error("Failed to load coaching prefill:", error);
+    }
+  }, []);
+
   function handleLoadScenario() {
     const scenario = scenarios[selectedScenario];
     setLoadedTitle(scenario.title);
     setLoadedType(scenario.type);
     setLoadedMessage(scenario.message);
     setLoadedCoaching(scenario.coaching);
-    setYourResponse("");
     setEvaluation(null);
   }
 

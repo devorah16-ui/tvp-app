@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const scripts = {
@@ -102,7 +103,10 @@ Invite:
 
 type ScriptKey = keyof typeof scripts;
 
+const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
+
 export default function ScriptsPage() {
+  const router = useRouter();
   const [selectedScript, setSelectedScript] = useState<ScriptKey>("atelier");
 
   const activeScript = scripts[selectedScript];
@@ -110,6 +114,18 @@ export default function ScriptsPage() {
   async function handleCopy() {
     await navigator.clipboard.writeText(activeScript.content);
     alert("Script copied.");
+  }
+
+  function handleUseInCoaching() {
+    localStorage.setItem(
+      COACHING_PREFILL_KEY,
+      JSON.stringify({
+        title: activeScript.title,
+        content: activeScript.content,
+      })
+    );
+
+    router.push("/testing");
   }
 
   return (
@@ -162,12 +178,21 @@ export default function ScriptsPage() {
                 </h2>
               </div>
 
-              <button
-                onClick={handleCopy}
-                className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
-              >
-                Copy Script
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleCopy}
+                  className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
+                >
+                  Copy Script
+                </button>
+
+                <button
+                  onClick={handleUseInCoaching}
+                  className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black"
+                >
+                  Use in Coaching
+                </button>
+              </div>
             </div>
 
             <div className="mt-6 rounded-3xl border border-stone-800 bg-stone-950/60 p-6">

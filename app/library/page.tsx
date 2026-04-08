@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type SavedResponse = {
   id: string;
-  source: "dashboard" | "coaching";
+  source: "dashboard" | "coaching" | "scripts";
   title: string;
   clientMessage: string;
   response: string;
@@ -18,11 +18,16 @@ const STORAGE_KEY = "tvp-response-library";
 
 export default function ResponseLibraryPage() {
   const [items, setItems] = useState<SavedResponse[]>([]);
-  const [filter, setFilter] = useState<"all" | "dashboard" | "coaching">("all");
+  const [sourceFilter, setSourceFilter] = useState<
+    "all" | "dashboard" | "coaching" | "scripts"
+  >("all");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
+
     try {
       const parsed = JSON.parse(raw) as SavedResponse[];
       setItems(parsed);
@@ -31,10 +36,40 @@ export default function ResponseLibraryPage() {
     }
   }, []);
 
+  const stageOptions = useMemo(() => {
+    const uniqueStages = Array.from(
+      new Set(
+        items
+          .map((item) => item.stage?.trim())
+          .filter((stage): stage is string => Boolean(stage))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+
+    return uniqueStages;
+  }, [items]);
+
   const filteredItems = useMemo(() => {
-    if (filter === "all") return items;
-    return items.filter((item) => item.source === filter);
-  }, [items, filter]);
+    return items.filter((item) => {
+      const matchesSource =
+        sourceFilter === "all" ? true : item.source === sourceFilter;
+
+      const matchesStage =
+        stageFilter === "all" ? true : item.stage === stageFilter;
+
+      const search = searchTerm.trim().toLowerCase();
+
+      const matchesSearch =
+        !search ||
+        item.title.toLowerCase().includes(search) ||
+        item.clientMessage.toLowerCase().includes(search) ||
+        item.response.toLowerCase().includes(search) ||
+        (item.stage || "").toLowerCase().includes(search) ||
+        (item.toneDirection || "").toLowerCase().includes(search) ||
+        (item.riskLevel || "").toLowerCase().includes(search);
+
+      return matchesSource && matchesStage && matchesSearch;
+    });
+  }, [items, sourceFilter, stageFilter, searchTerm]);
 
   function handleDelete(id: string) {
     const next = items.filter((item) => item.id !== id);
@@ -53,10 +88,16 @@ export default function ResponseLibraryPage() {
     alert("Response copied.");
   }
 
+  function handleResetFilters() {
+    setSourceFilter("all");
+    setStageFilter("all");
+    setSearchTerm("");
+  }
+
   return (
     <main className="min-h-screen bg-stone-950 text-white px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.35em] text-stone-400">
               Texas Vogue
@@ -69,31 +110,84 @@ export default function ResponseLibraryPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleClearAll}
+            className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+          >
+            Clear All
+          </button>
+        </div>
+
+        <div className="mb-8 grid gap-4 rounded-3xl border border-stone-800 bg-stone-900/60 p-6 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+              Search
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search responses..."
+              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+              Source
+            </label>
             <select
-              value={filter}
+              value={sourceFilter}
               onChange={(e) =>
-                setFilter(e.target.value as "all" | "dashboard" | "coaching")
+                setSourceFilter(
+                  e.target.value as "all" | "dashboard" | "coaching" | "scripts"
+                )
               }
-              className="rounded-2xl border border-stone-700 bg-stone-900 px-4 py-3 text-white"
+              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
             >
               <option value="all">All Sources</option>
               <option value="dashboard">Dashboard</option>
               <option value="coaching">Coaching</option>
+              <option value="scripts">Scripts</option>
             </select>
+          </div>
 
-            <button
-              onClick={handleClearAll}
-              className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+              Stage / Category
+            </label>
+            <select
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
             >
-              Clear All
+              <option value="all">All Stages</option>
+              {stageOptions.map((stage) => (
+                <option key={stage} value={stage}>
+                  {stage}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={handleResetFilters}
+              className="w-full rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+            >
+              Reset Filters
             </button>
           </div>
         </div>
 
+        <div className="mb-6 text-sm text-stone-400">
+          Showing {filteredItems.length} of {items.length} saved response
+          {items.length === 1 ? "" : "s"}.
+        </div>
+
         {filteredItems.length === 0 ? (
           <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-8 text-stone-300">
-            No saved responses yet.
+            No saved responses match your filters.
           </div>
         ) : (
           <div className="grid gap-5">
@@ -108,7 +202,11 @@ export default function ResponseLibraryPage() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.25em] text-stone-400">
-                        {item.source === "dashboard" ? "Dashboard" : "Coaching"}
+                        {item.source === "dashboard"
+                          ? "Dashboard"
+                          : item.source === "coaching"
+                          ? "Coaching"
+                          : "Scripts"}
                       </p>
                       <h2 className="mt-2 text-2xl font-medium">{item.title}</h2>
                       <p className="mt-2 text-sm text-stone-400">
@@ -135,7 +233,7 @@ export default function ResponseLibraryPage() {
                   <div className="mt-5 grid gap-4 md:grid-cols-3">
                     <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">
                       <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                        Stage
+                        Stage / Category
                       </p>
                       <p className="mt-2 text-stone-100">
                         {item.stage || "—"}

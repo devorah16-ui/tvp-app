@@ -62,6 +62,17 @@ type SavedResponse = {
 const STORAGE_KEY = "tvp-response-library";
 const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
 
+function parseCustomTags(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 export default function CoachingPage() {
   const [selectedScenario, setSelectedScenario] =
     useState<ScenarioKey>("overwhelmed");
@@ -70,6 +81,7 @@ export default function CoachingPage() {
   const [loadedMessage, setLoadedMessage] = useState("");
   const [loadedCoaching, setLoadedCoaching] = useState("");
   const [yourResponse, setYourResponse] = useState("");
+  const [customTags, setCustomTags] = useState("");
   const [loading, setLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
 
@@ -152,6 +164,7 @@ export default function CoachingPage() {
 
   function handleClear() {
     setYourResponse("");
+    setCustomTags("");
     setEvaluation(null);
   }
 
@@ -161,6 +174,11 @@ export default function CoachingPage() {
       return;
     }
 
+    const autoTags = [loadedType, "coaching"].filter(Boolean);
+    const mergedTags = Array.from(
+      new Set([...autoTags, ...parseCustomTags(customTags)])
+    );
+
     const newItem: SavedResponse = {
       id: crypto.randomUUID(),
       source: "coaching",
@@ -168,7 +186,7 @@ export default function CoachingPage() {
       clientMessage: loadedMessage,
       response: evaluation.revisedResponse,
       stage: loadedType,
-      tags: [loadedType, "coaching"].filter(Boolean),
+      tags: mergedTags,
       createdAt: new Date().toISOString(),
     };
 
@@ -235,6 +253,22 @@ export default function CoachingPage() {
                 placeholder="Write how you would respond to this client..."
                 className="min-h-[220px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
               />
+
+              <label className="mt-4 mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+                Custom Tags
+              </label>
+
+              <input
+                type="text"
+                value={customTags}
+                onChange={(e) => setCustomTags(e.target.value)}
+                placeholder="spouse, price, discovery"
+                className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+              />
+
+              <p className="mt-2 text-sm text-stone-400">
+                Separate tags with commas.
+              </p>
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <button

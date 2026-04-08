@@ -29,8 +29,20 @@ type SavedResponse = {
 
 const STORAGE_KEY = "tvp-response-library";
 
+function parseCustomTags(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 export default function DashboardPage() {
   const [clientMessage, setClientMessage] = useState("");
+  const [customTags, setCustomTags] = useState("");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -67,6 +79,7 @@ export default function DashboardPage() {
 
   function handleClear() {
     setClientMessage("");
+    setCustomTags("");
     setResult(null);
   }
 
@@ -75,6 +88,16 @@ export default function DashboardPage() {
       alert("Analyze a message first.");
       return;
     }
+
+    const autoTags = [
+      result.decisionStage,
+      result.riskLevel || "",
+      result.toneDirection || "",
+    ].filter(Boolean);
+
+    const mergedTags = Array.from(
+      new Set([...autoTags, ...parseCustomTags(customTags)])
+    );
 
     const newItem: SavedResponse = {
       id: crypto.randomUUID(),
@@ -85,11 +108,7 @@ export default function DashboardPage() {
       stage: result.decisionStage,
       toneDirection: result.toneDirection,
       riskLevel: result.riskLevel,
-      tags: [
-        result.decisionStage,
-        result.riskLevel || "",
-        result.toneDirection || "",
-      ].filter(Boolean),
+      tags: mergedTags,
       createdAt: new Date().toISOString(),
     };
 
@@ -127,6 +146,22 @@ export default function DashboardPage() {
               placeholder="Paste the client message here..."
               className="min-h-[220px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
             />
+
+            <label className="mt-4 mb-3 block text-sm font-medium text-stone-200">
+              Custom Tags
+            </label>
+
+            <input
+              type="text"
+              value={customTags}
+              onChange={(e) => setCustomTags(e.target.value)}
+              placeholder="spouse, hesitant, atelier"
+              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none"
+            />
+
+            <p className="mt-2 text-sm text-stone-400">
+              Separate tags with commas.
+            </p>
 
             <div className="mt-4 flex flex-wrap gap-3">
               <button

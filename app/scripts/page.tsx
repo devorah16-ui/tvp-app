@@ -104,10 +104,23 @@ Invite:
 type ScriptKey = keyof typeof scripts;
 
 const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
+const STORAGE_KEY = "tvp-response-library";
 
 type AdaptResult = {
   adaptedResponse: string;
   whyItFits: string;
+};
+
+type SavedResponse = {
+  id: string;
+  source: "dashboard" | "coaching" | "scripts";
+  title: string;
+  clientMessage: string;
+  response: string;
+  stage?: string;
+  toneDirection?: string;
+  riskLevel?: string;
+  createdAt: string;
 };
 
 export default function ScriptsPage() {
@@ -184,6 +197,30 @@ export default function ScriptsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSaveToLibrary() {
+    if (!clientMessage.trim() || !adaptResult?.adaptedResponse) {
+      alert("Adapt a script first.");
+      return;
+    }
+
+    const newItem: SavedResponse = {
+      id: crypto.randomUUID(),
+      source: "scripts",
+      title: `${activeScript.title} Adaptation`,
+      clientMessage,
+      response: adaptResult.adaptedResponse,
+      stage: activeScript.category,
+      createdAt: new Date().toISOString(),
+    };
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const existing = raw ? (JSON.parse(raw) as SavedResponse[]) : [];
+    existing.push(newItem);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+
+    alert("Saved to Response Library.");
   }
 
   return (
@@ -286,17 +323,26 @@ export default function ScriptsPage() {
                 </button>
 
                 {adaptResult?.adaptedResponse ? (
-                  <button
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(
-                        adaptResult.adaptedResponse
-                      );
-                      alert("Adapted response copied.");
-                    }}
-                    className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
-                  >
-                    Copy Adapted Response
-                  </button>
+                  <>
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(
+                          adaptResult.adaptedResponse
+                        );
+                        alert("Adapted response copied.");
+                      }}
+                      className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                    >
+                      Copy Adapted Response
+                    </button>
+
+                    <button
+                      onClick={handleSaveToLibrary}
+                      className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                    >
+                      Save to Library
+                    </button>
+                  </>
                 ) : null}
               </div>
             </div>

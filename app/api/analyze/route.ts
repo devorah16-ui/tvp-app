@@ -11,13 +11,6 @@ export async function POST(req: Request) {
     const clientMessage = body.clientMessage ?? "";
     const mode = body.mode ?? "analyze";
 
-    if (!clientMessage.trim()) {
-      return NextResponse.json(
-        { error: "Client message is required." },
-        { status: 400 }
-      );
-    }
-
     if (mode === "evaluate") {
       const prompt = `
 You are a luxury client communication coach for Texas Vogue Photography.
@@ -74,8 +67,71 @@ Return only valid JSON with this exact shape:
         );
       }
 
-      const parsed = JSON.parse(text);
-      return NextResponse.json(parsed);
+      return NextResponse.json(JSON.parse(text));
+    }
+
+    if (mode === "adapt-script") {
+      const prompt = `
+You are the Texas Vogue AI Concierge for a luxury fine-art portrait studio.
+
+Your job is to adapt an existing script so it fits a specific client message.
+
+Original script title:
+"${body.scriptTitle ?? ""}"
+
+Original script:
+"${body.scriptContent ?? ""}"
+
+Client message:
+"${body.clientMessageForAdaptation ?? ""}"
+
+Brand voice rules:
+- calm, confident, elevated
+- warm but never salesy
+- luxury, editorial, heirloom-focused
+- reassuring and guiding
+- never pushy
+- do not lead with discounts
+- make the client feel taken care of
+- responses should feel natural, not generic
+
+Adaptation guidance:
+- Keep the strengths and intent of the original script
+- Make it feel specific to this client
+- Make it sound like Deborah at her best
+- Do not sound copied, stiff, robotic, or overlong
+- Keep it warm, natural, and useful
+- The adapted response should feel ready to send or very close to ready
+- The explanation should be short and practical
+
+Return only valid JSON with this exact shape:
+{
+  "adaptedResponse": "...",
+  "whyItFits": "..."
+}
+`;
+      const response = await client.responses.create({
+        model: "gpt-5.4",
+        input: prompt,
+      });
+
+      const text = response.output_text;
+
+      if (!text) {
+        return NextResponse.json(
+          { error: "No output returned from model." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(JSON.parse(text));
+    }
+
+    if (!clientMessage.trim()) {
+      return NextResponse.json(
+        { error: "Client message is required." },
+        { status: 400 }
+      );
     }
 
     const prompt = `

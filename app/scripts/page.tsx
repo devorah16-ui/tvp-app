@@ -105,9 +105,17 @@ type ScriptKey = keyof typeof scripts;
 
 const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
 
+type AdaptResult = {
+  adaptedResponse: string;
+  whyItFits: string;
+};
+
 export default function ScriptsPage() {
   const router = useRouter();
   const [selectedScript, setSelectedScript] = useState<ScriptKey>("atelier");
+  const [clientMessage, setClientMessage] = useState("");
+  const [adaptResult, setAdaptResult] = useState<AdaptResult | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const activeScript = scripts[selectedScript];
 
@@ -117,15 +125,65 @@ export default function ScriptsPage() {
   }
 
   function handleUseInCoaching() {
+    const contentToUse =
+      adaptResult?.adaptedResponse?.trim() || activeScript.content;
+
     localStorage.setItem(
       COACHING_PREFILL_KEY,
       JSON.stringify({
         title: activeScript.title,
-        content: activeScript.content,
+        content: contentToUse,
       })
     );
 
     router.push("/testing");
+  }
+
+  async function handleAdapt() {
+    if (!clientMessage.trim()) {
+      alert("Paste a client message first.");
+      return;
+    }
+
+    setLoading(true);
+    setAdaptResult(null);
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "adapt-script",
+          clientMessage: "adapt-script-request",
+          scriptTitle: activeScript.title,
+          scriptContent: activeScript.content,
+          clientMessageForAdaptation: clientMessage,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Adaptation failed.");
+      }
+
+      setAdaptResult({
+        adaptedResponse:
+          data.adaptedResponse || "No adapted response returned.",
+        whyItFits: data.whyItFits || "No explanation returned.",
+      });
+    } catch (error) {
+      console.error(error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while adapting the script."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -144,13 +202,16 @@ export default function ScriptsPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
           <section className="space-y-4">
             {(Object.entries(scripts) as [ScriptKey, (typeof scripts)[ScriptKey]][]).map(
               ([key, script]) => (
                 <button
                   key={key}
-                  onClick={() => setSelectedScript(key)}
+                  onClick={() => {
+                    setSelectedScript(key);
+                    setAdaptResult(null);
+                  }}
                   className={`w-full rounded-3xl border p-5 text-left transition ${
                     selectedScript === key
                       ? "border-stone-500 bg-stone-800/90"
@@ -167,37 +228,96 @@ export default function ScriptsPage() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                  {activeScript.category}
-                </p>
-                <h2 className="mt-2 text-3xl font-medium">
-                  {activeScript.title}
-                </h2>
+          <section className="space-y-6">
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                    {activeScript.category}
+                  </p>
+                  <h2 className="mt-2 text-3xl font-medium">
+                    {activeScript.title}
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleCopy}
+                    className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
+                  >
+                    Copy Script
+                  </button>
+
+                  <button
+                    onClick={handleUseInCoaching}
+                    className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black"
+                  >
+                    Use in Coaching
+                  </button>
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={handleCopy}
-                  className="rounded-2xl border border-stone-700 px-4 py-2 text-sm text-stone-200"
-                >
-                  Copy Script
-                </button>
-
-                <button
-                  onClick={handleUseInCoaching}
-                  className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black"
-                >
-                  Use in Coaching
-                </button>
+              <div className="mt-6 rounded-3xl border border-stone-800 bg-stone-950/60 p-6">
+                <p className="whitespace-pre-line leading-8 text-stone-100">
+                  {activeScript.content}
+                </p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-3xl border border-stone-800 bg-stone-950/60 p-6">
-              <p className="whitespace-pre-line leading-8 text-stone-100">
-                {activeScript.content}
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-stone-400">
+                Client Message
+              </label>
+
+              <textarea
+                value={clientMessage}
+                onChange={(e) => setClientMessage(e.target.value)}
+                placeholder="Paste a real client message here to adapt this script..."
+                className="min-h-[180px] w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-4 text-base text-white outline-none"
+              />
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={handleAdapt}
+                  disabled={loading}
+                  className="rounded-2xl bg-white px-5 py-3 font-medium text-black disabled:opacity-60"
+                >
+                  {loading ? "Adapting..." : "Adapt Script to Client"}
+                </button>
+
+                {adaptResult?.adaptedResponse ? (
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        adaptResult.adaptedResponse
+                      );
+                      alert("Adapted response copied.");
+                    }}
+                    className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
+                  >
+                    Copy Adapted Response
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                Adapted Response
+              </h2>
+              <p className="mt-4 whitespace-pre-line text-stone-100">
+                {adaptResult?.adaptedResponse ||
+                  "Your adapted response will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-6">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                Why It Fits
+              </h2>
+              <p className="mt-4 text-stone-100">
+                {adaptResult?.whyItFits ||
+                  "A short explanation of why the adaptation fits this client will appear here."}
               </p>
             </div>
           </section>

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type AnalyzeResult = {
   emotionalNeed: string;
-  luStage: string;
+  decisionStage: string;
   response: string;
   nextQuestion: string;
   whatToAvoid?: string;
@@ -114,11 +114,11 @@ export default function DashboardPage() {
 
             <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
               <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
-                LU Stage
+                Decision Stage
               </h2>
               <p className="mt-3 text-lg">
-                {result && result.luStage
-                  ? result.luStage
+                {result && result.decisionStage
+                  ? result.decisionStage
                   : "Waiting for analysis..."}
               </p>
             </div>

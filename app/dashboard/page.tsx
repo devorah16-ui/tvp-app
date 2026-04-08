@@ -7,7 +7,9 @@ type AnalyzeResult = {
   luStage: string;
   response: string;
   nextQuestion: string;
+  whatToAvoid?: string;
   originalMessage?: string;
+  debug?: string;
 };
 
 export default function DashboardPage() {
@@ -44,6 +46,11 @@ export default function DashboardPage() {
     if (!result?.response) return;
     await navigator.clipboard.writeText(result.response);
     alert("Response copied.");
+  }
+
+  function handleClear() {
+    setClientMessage("");
+    setResult(null);
   }
 
   return (
@@ -83,10 +90,7 @@ export default function DashboardPage() {
               </button>
 
               <button
-                onClick={() => {
-                  setClientMessage("");
-                  setResult(null);
-                }}
+                onClick={handleClear}
                 className="rounded-2xl border border-stone-700 px-5 py-3 text-stone-200"
               >
                 Clear
@@ -100,7 +104,9 @@ export default function DashboardPage() {
                 Emotional Need
               </h2>
               <p className="mt-3 text-lg">
-                {result?.emotionalNeed || "Waiting for analysis..."}
+                {result && result.emotionalNeed
+                  ? result.emotionalNeed
+                  : "Waiting for analysis..."}
               </p>
             </div>
 
@@ -109,7 +115,9 @@ export default function DashboardPage() {
                 LU Stage
               </h2>
               <p className="mt-3 text-lg">
-                {result?.luStage || "Waiting for analysis..."}
+                {result && result.luStage
+                  ? result.luStage
+                  : "Waiting for analysis..."}
               </p>
             </div>
 
@@ -126,8 +134,14 @@ export default function DashboardPage() {
                 </button>
               </div>
               <p className="mt-3 whitespace-pre-line text-stone-100">
-                {result?.response || "Your suggested response will appear here."}
+                {result && result.response
+                  ? result.response
+                  : "Your suggested response will appear here."}
               </p>
+
+              {result && result.debug ? (
+                <p className="mt-2 text-xs text-stone-500">{result.debug}</p>
+              ) : null}
             </div>
 
             <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
@@ -135,7 +149,20 @@ export default function DashboardPage() {
                 Next Question
               </h2>
               <p className="mt-3 text-stone-100">
-                {result?.nextQuestion || "Your next guiding question will appear here."}
+                {result && result.nextQuestion
+                  ? result.nextQuestion
+                  : "Your next guiding question will appear here."}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-800 bg-stone-900/60 p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-stone-400">
+                What To Avoid
+              </h2>
+              <p className="mt-3 text-stone-100">
+                {result && result.whatToAvoid
+                  ? result.whatToAvoid
+                  : "Coaching guidance will appear here."}
               </p>
             </div>
           </section>

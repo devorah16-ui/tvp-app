@@ -120,6 +120,7 @@ type SavedResponse = {
   stage?: string;
   toneDirection?: string;
   riskLevel?: string;
+  tags?: string[];
   createdAt: string;
 };
 
@@ -212,6 +213,9 @@ export default function ScriptsPage() {
       clientMessage,
       response: adaptResult.adaptedResponse,
       stage: activeScript.category,
+      tags: [activeScript.title, activeScript.category, "adapted-script"].filter(
+        Boolean
+      ),
       createdAt: new Date().toISOString(),
     };
 

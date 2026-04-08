@@ -48,13 +48,14 @@ type EvaluationResult = {
 
 type SavedResponse = {
   id: string;
-  source: "dashboard" | "coaching";
+  source: "dashboard" | "coaching" | "scripts";
   title: string;
   clientMessage: string;
   response: string;
   stage?: string;
   toneDirection?: string;
   riskLevel?: string;
+  tags?: string[];
   createdAt: string;
 };
 
@@ -167,6 +168,7 @@ export default function CoachingPage() {
       clientMessage: loadedMessage,
       response: evaluation.revisedResponse,
       stage: loadedType,
+      tags: [loadedType, "coaching"].filter(Boolean),
       createdAt: new Date().toISOString(),
     };
 

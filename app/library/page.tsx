@@ -11,6 +11,7 @@ type SavedResponse = {
   stage?: string;
   toneDirection?: string;
   riskLevel?: string;
+  tags?: string[];
   createdAt: string;
 };
 
@@ -22,6 +23,7 @@ export default function ResponseLibraryPage() {
     "all" | "dashboard" | "coaching" | "scripts"
   >("all");
   const [stageFilter, setStageFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -37,15 +39,23 @@ export default function ResponseLibraryPage() {
   }, []);
 
   const stageOptions = useMemo(() => {
-    const uniqueStages = Array.from(
+    return Array.from(
       new Set(
         items
           .map((item) => item.stage?.trim())
           .filter((stage): stage is string => Boolean(stage))
       )
     ).sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
-    return uniqueStages;
+  const tagOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        items.flatMap((item) =>
+          (item.tags || []).map((tag) => tag.trim()).filter(Boolean)
+        )
+      )
+    ).sort((a, b) => a.localeCompare(b));
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -56,6 +66,9 @@ export default function ResponseLibraryPage() {
       const matchesStage =
         stageFilter === "all" ? true : item.stage === stageFilter;
 
+      const matchesTag =
+        tagFilter === "all" ? true : (item.tags || []).includes(tagFilter);
+
       const search = searchTerm.trim().toLowerCase();
 
       const matchesSearch =
@@ -65,11 +78,12 @@ export default function ResponseLibraryPage() {
         item.response.toLowerCase().includes(search) ||
         (item.stage || "").toLowerCase().includes(search) ||
         (item.toneDirection || "").toLowerCase().includes(search) ||
-        (item.riskLevel || "").toLowerCase().includes(search);
+        (item.riskLevel || "").toLowerCase().includes(search) ||
+        (item.tags || []).some((tag) => tag.toLowerCase().includes(search));
 
-      return matchesSource && matchesStage && matchesSearch;
+      return matchesSource && matchesStage && matchesTag && matchesSearch;
     });
-  }, [items, sourceFilter, stageFilter, searchTerm]);
+  }, [items, sourceFilter, stageFilter, tagFilter, searchTerm]);
 
   function handleDelete(id: string) {
     const next = items.filter((item) => item.id !== id);
@@ -91,6 +105,7 @@ export default function ResponseLibraryPage() {
   function handleResetFilters() {
     setSourceFilter("all");
     setStageFilter("all");
+    setTagFilter("all");
     setSearchTerm("");
   }
 
@@ -118,7 +133,7 @@ export default function ResponseLibraryPage() {
           </button>
         </div>
 
-        <div className="mb-8 grid gap-4 rounded-3xl border border-stone-800 bg-stone-900/60 p-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid gap-4 rounded-3xl border border-stone-800 bg-stone-900/60 p-6 md:grid-cols-2 xl:grid-cols-5">
           <div>
             <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
               Search
@@ -165,6 +180,24 @@ export default function ResponseLibraryPage() {
               {stageOptions.map((stage) => (
                 <option key={stage} value={stage}>
                   {stage}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-stone-400">
+              Tag
+            </label>
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-white"
+            >
+              <option value="all">All Tags</option>
+              {tagOptions.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
                 </option>
               ))}
             </select>
@@ -229,6 +262,19 @@ export default function ResponseLibraryPage() {
                       </button>
                     </div>
                   </div>
+
+                  {(item.tags || []).length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {item.tags!.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-stone-700 px-3 py-1 text-xs text-stone-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
 
                   <div className="mt-5 grid gap-4 md:grid-cols-3">
                     <div className="rounded-2xl border border-stone-800 bg-stone-950/50 p-4">

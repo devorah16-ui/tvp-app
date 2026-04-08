@@ -16,13 +16,14 @@ type AnalyzeResult = {
 
 type SavedResponse = {
   id: string;
-  source: "dashboard" | "coaching";
+  source: "dashboard" | "coaching" | "scripts";
   title: string;
   clientMessage: string;
   response: string;
   stage?: string;
   toneDirection?: string;
   riskLevel?: string;
+  tags?: string[];
   createdAt: string;
 };
 
@@ -84,6 +85,11 @@ export default function DashboardPage() {
       stage: result.decisionStage,
       toneDirection: result.toneDirection,
       riskLevel: result.riskLevel,
+      tags: [
+        result.decisionStage,
+        result.riskLevel || "",
+        result.toneDirection || "",
+      ].filter(Boolean),
       createdAt: new Date().toISOString(),
     };
 

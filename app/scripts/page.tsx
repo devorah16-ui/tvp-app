@@ -4,27 +4,27 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const scripts = {
-  atelier: {
-    title: "Atelier Script",
+  portrait: {
+    title: "Portrait Inquiry Script",
     category: "Boutique Portrait Experience",
     description:
-      "Guided language for women, mothers, and editorial-style portrait sessions.",
+      "Guided language for clients who are drawn to a more personalized, high-touch portrait experience.",
     content: `Opening:
 “I’m so glad you reached out. A lot of clients begin right here — knowing they want something meaningful, but not necessarily knowing exactly what the process looks like yet.”
 
 Guiding the Experience:
-“My role is to guide you through it in a way that feels easy and thoughtful. From styling to the session itself to choosing what you love afterward, I walk with you through each step so it never feels overwhelming.”
+“My role is to guide you through it in a way that feels easy and thoughtful. From planning to the session itself to choosing what you love afterward, I walk with you through each step so it never feels overwhelming.”
 
 Positioning the Value:
-“This experience is designed to create something that feels deeply personal and beautifully finished — not just images on a screen, but artwork that holds meaning for you.”
+“This experience is designed to create something that feels deeply personal and beautifully finished — not just images on a screen, but portraits that hold meaning for you.”
 
 Soft Next Step:
 “If it would be helpful, I can walk you through what the experience typically looks like and help you decide whether it feels like the right fit for what you’re envisioning.”`,
   },
 
-  heirloom: {
-    title: "Heirloom Script",
-    category: "Family + Children + Milestone Portraits",
+  family: {
+    title: "Family & Milestone Script",
+    category: "Family + Children + Milestones",
     description:
       "Refined, warm language focused on preserving meaningful moments with a timeless finish.",
     content: `Opening:
@@ -72,7 +72,7 @@ Close Gently:
     content: `Price Concern:
 “I completely understand that. Most clients aren’t ready to make a decision the moment they first reach out — they simply want clarity first. My role is to help you understand the experience so you can decide from a place that feels calm and informed.”
 
-Spouse / Partner Concern:
+Partner Concern:
 “That makes complete sense. This is something meaningful, and I would want you both to feel good about it. I’m happy to give you a simple overview you can share, and if it’s helpful, I’m always glad to answer questions.”
 
 Overwhelm:
@@ -137,7 +137,7 @@ function parseCustomTags(input: string): string[] {
 
 export default function ScriptsPage() {
   const router = useRouter();
-  const [selectedScript, setSelectedScript] = useState<ScriptKey>("atelier");
+  const [selectedScript, setSelectedScript] = useState<ScriptKey>("portrait");
   const [clientMessage, setClientMessage] = useState("");
   const [customTags, setCustomTags] = useState("");
   const [adaptResult, setAdaptResult] = useState<AdaptResult | null>(null);
@@ -246,9 +246,7 @@ export default function ScriptsPage() {
     <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
-          <h1 className="font-display text-4xl text-[#F3EDE6]">
-            Scripts
-          </h1>
+          <h1 className="font-display text-4xl text-[#F3EDE6]">Scripts</h1>
           <p className="mt-4 max-w-2xl text-[#CBBFB3]">
             Foundational language for guiding clients, handling objections, and
             leading conversations with clarity and ease.
@@ -339,7 +337,7 @@ export default function ScriptsPage() {
                 type="text"
                 value={customTags}
                 onChange={(e) => setCustomTags(e.target.value)}
-                placeholder="spouse, atelier, objection"
+                placeholder="family, objection, inquiry"
                 className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
               />
 

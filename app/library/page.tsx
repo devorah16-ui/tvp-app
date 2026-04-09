@@ -158,12 +158,12 @@ export default function ResponseLibraryPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
-            <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
+            <h1 className="font-display text-4xl text-[#F3EDE6]">
               Response Library
             </h1>
             <p className="mt-4 max-w-2xl text-[#CBBFB3]">
-              Save, review, and reuse your strongest client responses.
+              A curated collection of your strongest client responses, refined
+              and ready to reuse.
             </p>
           </div>
 
@@ -176,74 +176,37 @@ export default function ResponseLibraryPage() {
         </div>
 
         <div className="mb-8 grid gap-4 rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 md:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
-              Search
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search responses..."
-              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
-            />
-          </div>
+          <FilterInput
+            label="Search"
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search responses..."
+          />
 
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
-              Source
-            </label>
-            <select
-              value={sourceFilter}
-              onChange={(e) =>
-                setSourceFilter(
-                  e.target.value as "all" | "dashboard" | "coaching" | "scripts"
-                )
-              }
-              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
-            >
-              <option value="all">All Sources</option>
-              <option value="dashboard">Dashboard</option>
-              <option value="coaching">Coaching</option>
-              <option value="scripts">Scripts</option>
-            </select>
-          </div>
+          <FilterSelect
+            label="Source"
+            value={sourceFilter}
+            onChange={(value) =>
+              setSourceFilter(
+                value as "all" | "dashboard" | "coaching" | "scripts"
+              )
+            }
+            options={["all", "dashboard", "coaching", "scripts"]}
+          />
 
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
-              Stage / Category
-            </label>
-            <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
-              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
-            >
-              <option value="all">All Stages</option>
-              {stageOptions.map((stage) => (
-                <option key={stage} value={stage}>
-                  {stage}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterSelect
+            label="Stage / Category"
+            value={stageFilter}
+            onChange={setStageFilter}
+            options={["all", ...stageOptions]}
+          />
 
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
-              Tag
-            </label>
-            <select
-              value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
-              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
-            >
-              <option value="all">All Tags</option>
-              {tagOptions.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterSelect
+            label="Tag"
+            value={tagFilter}
+            onChange={setTagFilter}
+            options={["all", ...tagOptions]}
+          />
 
           <div className="flex items-end">
             <button
@@ -281,7 +244,7 @@ export default function ResponseLibraryPage() {
                       <div>
                         <p className="text-xs uppercase tracking-[0.25em] text-[#9D8F83]">
                           {item.source === "dashboard"
-                            ? "Dashboard"
+                            ? "Lead Analyzer"
                             : item.source === "coaching"
                             ? "Coaching"
                             : "Scripts"}
@@ -371,9 +334,9 @@ export default function ResponseLibraryPage() {
                     )}
 
                     <div className="mt-5 grid gap-4 md:grid-cols-3">
-                      <InfoCard label="Stage / Category" value={item.stage || "—"} />
-                      <InfoCard label="Tone" value={item.toneDirection || "—"} />
-                      <InfoCard label="Risk" value={item.riskLevel || "—"} />
+                      <MiniCard label="Stage / Category" value={item.stage || "—"} />
+                      <MiniCard label="Tone" value={item.toneDirection || "—"} />
+                      <MiniCard label="Risk" value={item.riskLevel || "—"} />
                     </div>
 
                     <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -396,7 +359,67 @@ export default function ResponseLibraryPage() {
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function FilterInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
+        {label}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none placeholder:text-[#9D8F83]"
+      />
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-[#9D8F83]">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option === "all"
+              ? `All ${label === "Source" ? "Sources" : label === "Tag" ? "Tags" : "Stages"}`
+              : option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function MiniCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-[#4A3E36] bg-[#171311] p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-[#9D8F83]">

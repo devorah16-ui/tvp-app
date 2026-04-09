@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const scenarioGroups = {
   overwhelmed: {
@@ -217,6 +217,8 @@ type SavedResponse = {
   createdAt: string;
 };
 
+type ScenarioSourceMode = "built-in" | "real-client" | "mixed";
+
 const STORAGE_KEY = "tvp-response-library";
 const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
 
@@ -231,23 +233,36 @@ function parseCustomTags(input: string): string[] {
   );
 }
 
-function getRandomScenario(groupKey: ScenarioGroupKey): Scenario {
+function getRandomBuiltInScenario(groupKey: ScenarioGroupKey): Scenario {
   const scenarios = scenarioGroups[groupKey].scenarios;
   const randomIndex = Math.floor(Math.random() * scenarios.length);
   return scenarios[randomIndex];
 }
 
+function getRandomItem<T>(items: T[]): T | null {
+  if (!items.length) return null;
+  const randomIndex = Math.floor(Math.random() * items.length);
+  return items[randomIndex];
+}
+
 export default function CoachingPage() {
   const [selectedScenario, setSelectedScenario] =
     useState<ScenarioGroupKey>("overwhelmed");
+  const [scenarioSource, setScenarioSource] =
+    useState<ScenarioSourceMode>("built-in");
+
   const [loadedTitle, setLoadedTitle] = useState("");
   const [loadedType, setLoadedType] = useState("");
   const [loadedMessage, setLoadedMessage] = useState("");
   const [loadedCoaching, setLoadedCoaching] = useState("");
+  const [loadedSourceLabel, setLoadedSourceLabel] = useState("");
+  const [loadedSourceTags, setLoadedSourceTags] = useState<string[]>([]);
+
   const [yourResponse, setYourResponse] = useState("");
   const [customTags, setCustomTags] = useState("");
   const [loading, setLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [savedLibraryItems, setSavedLibraryItems] = useState<SavedResponse[]>([]);
 
   useEffect(() => {
     const raw = localStorage.getItem(COACHING_PREFILL_KEY);
@@ -262,21 +277,88 @@ export default function CoachingPage() {
     }
   }, []);
 
-  function loadScenario(groupKey: ScenarioGroupKey) {
-    const scenario = getRandomScenario(groupKey);
+  useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      setSavedLibraryItems([]);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as SavedResponse[];
+      setSavedLibraryItems(parsed);
+    } catch (error) {
+      console.error("Failed to load saved library items:", error);
+      setSavedLibraryItems([]);
+    }
+  }, []);
+
+  const realClientCases = useMemo(() => {
+    return savedLibraryItems.filter(
+      (item) => item.clientMessage && item.clientMessage.trim().length >= 20
+    );
+  }, [savedLibraryItems]);
+
+  function loadBuiltInScenario(groupKey: ScenarioGroupKey) {
+    const scenario = getRandomBuiltInScenario(groupKey);
     setLoadedTitle(scenario.title);
     setLoadedType(scenario.type);
     setLoadedMessage(scenario.message);
     setLoadedCoaching(scenario.coaching);
+    setLoadedSourceLabel("Built-In Scenario");
+    setLoadedSourceTags([scenarioGroups[groupKey].label]);
+    setEvaluation(null);
+  }
+
+  function loadRealClientScenario() {
+    const realClient = getRandomItem(realClientCases);
+
+    if (!realClient) {
+      alert("No saved real client cases available yet in the Response Library.");
+      return;
+    }
+
+    setLoadedTitle(realClient.title || "Real Client Case");
+    setLoadedType(realClient.stage || "Real Client Practice");
+    setLoadedMessage(realClient.clientMessage);
+    setLoadedCoaching(
+      "This is a real client message. Focus on clarity, emotional awareness, and steady guidance in your response."
+    );
+    setLoadedSourceLabel(
+      `Real Client Case • ${
+        realClient.source === "dashboard"
+          ? "Lead Analyzer"
+          : realClient.source === "coaching"
+          ? "Coaching"
+          : "Scripts"
+      }`
+    );
+    setLoadedSourceTags(realClient.tags || []);
     setEvaluation(null);
   }
 
   function handleLoadScenario() {
-    loadScenario(selectedScenario);
+    if (scenarioSource === "built-in") {
+      loadBuiltInScenario(selectedScenario);
+      return;
+    }
+
+    if (scenarioSource === "real-client") {
+      loadRealClientScenario();
+      return;
+    }
+
+    const pickReal = Math.random() < 0.5;
+
+    if (pickReal && realClientCases.length > 0) {
+      loadRealClientScenario();
+    } else {
+      loadBuiltInScenario(selectedScenario);
+    }
   }
 
   function handleLoadAnother() {
-    loadScenario(selectedScenario);
+    handleLoadScenario();
   }
 
   async function handleEvaluate() {
@@ -341,7 +423,13 @@ export default function CoachingPage() {
       return;
     }
 
-    const autoTags = [loadedType, "coaching", scenarioGroups[selectedScenario].label].filter(Boolean);
+    const autoTags = [
+      loadedType,
+      "coaching",
+      loadedSourceLabel,
+      ...loadedSourceTags,
+    ].filter(Boolean);
+
     const mergedTags = Array.from(
       new Set([...autoTags, ...parseCustomTags(customTags)])
     );
@@ -369,13 +457,10 @@ export default function CoachingPage() {
     <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10">
-          <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
-          <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
-            Coaching
-          </h1>
+          <h1 className="font-display text-4xl text-[#F3EDE6]">Coaching</h1>
           <p className="mt-4 max-w-2xl text-[#CBBFB3]">
-            Practice real client situations, refine your language, and coach
-            yourself before responding live.
+            Practice real client conversations, refine your language, and build
+            confidence before responding live.
           </p>
         </div>
 
@@ -383,7 +468,28 @@ export default function CoachingPage() {
           <section className="space-y-6">
             <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
               <label className="mb-3 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
-                Choose Coaching Category
+                Scenario Type
+              </label>
+
+              <select
+                value={scenarioSource}
+                onChange={(e) =>
+                  setScenarioSource(e.target.value as ScenarioSourceMode)
+                }
+                className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6]"
+              >
+                <option value="built-in">Built-In Practice Scenarios</option>
+                <option value="real-client">Real Client Library</option>
+                <option value="mixed">Mixed</option>
+              </select>
+
+              <p className="mt-2 text-sm text-[#9D8F83]">
+                Choose between structured practice scenarios or real client
+                messages from your library.
+              </p>
+
+              <label className="mb-3 mt-5 block text-sm uppercase tracking-[0.2em] text-[#9D8F83]">
+                Built-In Category
               </label>
 
               <select
@@ -416,7 +522,8 @@ export default function CoachingPage() {
               </div>
 
               <p className="mt-3 text-sm text-[#9D8F83]">
-                Each category contains multiple scenario variations.
+                Built-in categories contain multiple variations. Real client mode
+                uses saved library items with usable client messages.
               </p>
             </div>
 
@@ -477,6 +584,7 @@ export default function CoachingPage() {
           <section className="space-y-4">
             {[
               ["Scenario", loadedTitle || "No scenario loaded yet."],
+              ["Source", loadedSourceLabel || "Waiting..."],
               ["Coaching Type", loadedType || "Waiting..."],
               [
                 "Client Message",
@@ -502,21 +610,50 @@ export default function CoachingPage() {
                   "A revised response will appear here.",
               ],
             ].map(([title, value]) => (
-              <div
-                key={title}
-                className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5"
-              >
-                <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                  {title}
-                </h2>
-                <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">
-                  {value}
-                </p>
-              </div>
+              <InfoCard key={title} title={title} value={value} />
             ))}
+
+            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+                Source Tags
+              </h2>
+
+              {loadedSourceTags.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {loadedSourceTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-[#4A3E36] px-3 py-1 text-xs text-[#CBBFB3]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-[#F3EDE6]">
+                  Source tags will appear here.
+                </p>
+              )}
+            </div>
+
+            <InfoCard
+              title="Real Client Cases Available"
+              value={String(realClientCases.length)}
+            />
           </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function InfoCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+      <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+        {title}
+      </h2>
+      <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">{value}</p>
+    </div>
   );
 }

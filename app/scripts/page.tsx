@@ -6,11 +6,11 @@ import { useState } from "react";
 const scripts = {
   atelier: {
     title: "Atelier Script",
-    category: "Luxury Portrait Experience",
+    category: "Boutique Portrait Experience",
     description:
-      "Guided language for women, mothers, and editorial-style portrait experiences.",
+      "Guided language for women, mothers, and editorial-style portrait sessions.",
     content: `Opening:
-“I’m so glad you reached out. A lot of my clients begin right here — knowing they want something meaningful, but not necessarily knowing exactly what the process looks like yet.”
+“I’m so glad you reached out. A lot of clients begin right here — knowing they want something meaningful, but not necessarily knowing exactly what the process looks like yet.”
 
 Guiding the Experience:
 “My role is to guide you through it in a way that feels easy and thoughtful. From styling to the session itself to choosing what you love afterward, I walk with you through each step so it never feels overwhelming.”
@@ -21,6 +21,7 @@ Positioning the Value:
 Soft Next Step:
 “If it would be helpful, I can walk you through what the experience typically looks like and help you decide whether it feels like the right fit for what you’re envisioning.”`,
   },
+
   heirloom: {
     title: "Heirloom Script",
     category: "Family + Children + Milestone Portraits",
@@ -38,6 +39,7 @@ Positioning the Value:
 Soft Next Step:
 “If you’d like, I can walk you through what the session experience looks like and help you see what would make the most sense for your family.”`,
   },
+
   discovery: {
     title: "Discovery Call Script",
     category: "Consultation + Client Guidance",
@@ -61,9 +63,10 @@ Transition:
 Close Gently:
 “If it feels aligned, the next step would simply be choosing a date and moving into the planning process together.”`,
   },
+
   objections: {
     title: "Objection Handling",
-    category: "Reassurance + Decision Support",
+    category: "Decision Support",
     description:
       "Thoughtful responses for hesitation around price, spouse, timing, and overwhelm.",
     content: `Price Concern:
@@ -78,6 +81,7 @@ Overwhelm:
 Timing:
 “That makes sense too. Sometimes the best next step is simply getting clarity now, and then deciding on timing once it feels right.”`,
   },
+
   booking: {
     title: "Booking + Next Step",
     category: "Moving Forward",
@@ -242,13 +246,12 @@ export default function ScriptsPage() {
     <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
-          <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
-          <h1 className="mt-3 font-display text-4xl text-[#F3EDE6]">
-            Script Library
+          <h1 className="font-display text-4xl text-[#F3EDE6]">
+            Scripts
           </h1>
           <p className="mt-4 max-w-2xl text-[#CBBFB3]">
-            Keep your foundational guidance, objections, consultation language,
-            and next-step phrasing in one place.
+            Foundational language for guiding clients, handling objections, and
+            leading conversations with clarity and ease.
           </p>
         </div>
 
@@ -378,28 +381,35 @@ export default function ScriptsPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Adapted Response
-              </h2>
-              <p className="mt-4 whitespace-pre-line text-[#F3EDE6]">
-                {adaptResult?.adaptedResponse ||
-                  "Your adapted response will appear here."}
-              </p>
-            </div>
+            <InfoBlock
+              title="Adapted Response"
+              value={
+                adaptResult?.adaptedResponse ||
+                "Your adapted response will appear here."
+              }
+            />
 
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Why It Fits
-              </h2>
-              <p className="mt-4 text-[#F3EDE6]">
-                {adaptResult?.whyItFits ||
-                  "A short explanation of why the adaptation fits this client will appear here."}
-              </p>
-            </div>
+            <InfoBlock
+              title="Why It Fits"
+              value={
+                adaptResult?.whyItFits ||
+                "A short explanation of why the adaptation fits this client will appear here."
+              }
+            />
           </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function InfoBlock({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6">
+      <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+        {title}
+      </h2>
+      <p className="mt-4 whitespace-pre-line text-[#F3EDE6]">{value}</p>
+    </div>
   );
 }

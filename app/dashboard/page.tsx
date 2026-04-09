@@ -128,18 +128,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#171311] text-[#F3EDE6] px-6 py-10">
+    <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
-          <p className="font-display text-sm text-[#CBBFB3]">
-            TEXAS VOGUE
-          </p>
-          <h1 className="mt-2 font-display text-4xl text-[#F3EDE6]">
+          <h1 className="font-display text-4xl text-[#F3EDE6]">
             Lead Analyzer
           </h1>
           <p className="mt-3 max-w-2xl text-[#CBBFB3]">
-            Analyze client language, identify emotional need, and generate a
-            guided response in the Texas Vogue tone.
+            Understand client intent, identify emotional drivers, and craft
+            responses that feel clear, calm, and guided.
           </p>
         </div>
 
@@ -198,23 +195,14 @@ export default function DashboardPage() {
           </section>
 
           <section className="space-y-4">
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Emotional Need
-              </h2>
-              <p className="mt-3 text-lg text-[#F3EDE6]">
-                {result?.emotionalNeed || "Waiting for analysis..."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Decision Stage
-              </h2>
-              <p className="mt-3 text-lg text-[#F3EDE6]">
-                {result?.decisionStage || "Waiting for analysis..."}
-              </p>
-            </div>
+            <InfoCard
+              title="Emotional Need"
+              value={result?.emotionalNeed || "Waiting for analysis..."}
+            />
+            <InfoCard
+              title="Decision Stage"
+              value={result?.decisionStage || "Waiting for analysis..."}
+            />
 
             <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
               <div className="flex items-center justify-between gap-3">
@@ -238,45 +226,39 @@ export default function DashboardPage() {
               ) : null}
             </div>
 
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Next Question
-              </h2>
-              <p className="mt-3 text-[#F3EDE6]">
-                {result?.nextQuestion ||
-                  "Your next guiding question will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                What To Avoid
-              </h2>
-              <p className="mt-3 text-[#F3EDE6]">
-                {result?.whatToAvoid || "Coaching guidance will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Tone Direction
-              </h2>
-              <p className="mt-3 text-[#F3EDE6]">
-                {result?.toneDirection || "Tone guidance will appear here."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
-              <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-                Risk Level
-              </h2>
-              <p className="mt-3 text-[#F3EDE6]">
-                {result?.riskLevel || "Risk level will appear here."}
-              </p>
-            </div>
+            <InfoCard
+              title="Next Question"
+              value={
+                result?.nextQuestion ||
+                "Your next guiding question will appear here."
+              }
+            />
+            <InfoCard
+              title="What To Avoid"
+              value={result?.whatToAvoid || "Coaching guidance will appear here."}
+            />
+            <InfoCard
+              title="Tone Direction"
+              value={result?.toneDirection || "Tone guidance will appear here."}
+            />
+            <InfoCard
+              title="Risk Level"
+              value={result?.riskLevel || "Risk level will appear here."}
+            />
           </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function InfoCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-5">
+      <h2 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+        {title}
+      </h2>
+      <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">{value}</p>
+    </div>
   );
 }

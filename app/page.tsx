@@ -5,13 +5,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-12">
-          <p className="font-display text-sm text-[#CBBFB3]">TEXAS VOGUE</p>
-          <h1 className="mt-3 font-display text-5xl text-[#F3EDE6]">
-            Client Conversation AI
+          <h1 className="font-display text-5xl text-[#F3EDE6]">
+            Client Conversation System
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-[#CBBFB3]">
-            Luxury client response support, coaching, and reusable response
-            strategy for the Texas Vogue experience.
+            A refined system for understanding clients, guiding conversations,
+            and building meaningful connections that lead to confident
+            decisions.
           </p>
         </div>
 
@@ -27,8 +27,8 @@ export default function HomePage() {
               Lead Analyzer
             </h2>
             <p className="mt-3 text-[#CBBFB3]">
-              Review a client message, identify emotional need, and generate a
-              guided response.
+              Understand client intent, identify emotional drivers, and shape a
+              clear next response.
             </p>
           </Link>
 
@@ -43,8 +43,8 @@ export default function HomePage() {
               Coaching
             </h2>
             <p className="mt-3 text-[#CBBFB3]">
-              Practice real client situations, refine your responses, and get
-              guided feedback before replying live.
+              Practice real client conversations, refine your wording, and build
+              confidence before replying live.
             </p>
           </Link>
 
@@ -59,8 +59,8 @@ export default function HomePage() {
               Scripts
             </h2>
             <p className="mt-3 text-[#CBBFB3]">
-              Keep your foundational guidance, objections, consultation
-              language, and next-step phrasing in one place.
+              Keep foundational language for inquiries, objections, and guided
+              next steps in one place.
             </p>
           </Link>
 
@@ -75,8 +75,8 @@ export default function HomePage() {
               Response Library
             </h2>
             <p className="mt-3 text-[#CBBFB3]">
-              Save your strongest responses and reuse them when similar leads
-              come in.
+              Save, organize, and reuse your strongest client responses with
+              clarity.
             </p>
           </Link>
         </div>

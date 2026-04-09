@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const scripts = {
   portrait: {
@@ -9,17 +9,16 @@ const scripts = {
     category: "Boutique Portrait Experience",
     description:
       "Guided language for clients who are drawn to a more personalized, high-touch portrait experience.",
-    content: `Opening:
-“I’m so glad you reached out. A lot of clients begin right here — knowing they want something meaningful, but not necessarily knowing exactly what the process looks like yet.”
-
-Guiding the Experience:
-“My role is to guide you through it in a way that feels easy and thoughtful. From planning to the session itself to choosing what you love afterward, I walk with you through each step so it never feels overwhelming.”
-
-Positioning the Value:
-“This experience is designed to create something that feels deeply personal and beautifully finished — not just images on a screen, but portraits that hold meaning for you.”
-
-Soft Next Step:
-“If it would be helpful, I can walk you through what the experience typically looks like and help you decide whether it feels like the right fit for what you’re envisioning.”`,
+    sections: {
+      opener:
+        "I’m so glad you reached out. A lot of clients begin right here — knowing they want something meaningful, but not necessarily knowing exactly what the process looks like yet.",
+      guidance:
+        "My role is to guide you through it in a way that feels easy and thoughtful. From planning to the session itself to choosing what you love afterward, I walk with you through each step so it never feels overwhelming.",
+      value:
+        "This experience is designed to create something that feels deeply personal and beautifully finished — not just images on a screen, but portraits that hold meaning for you.",
+      nextStep:
+        "If it would be helpful, I can walk you through what the experience typically looks like and help you decide whether it feels like the right fit for what you’re envisioning.",
+    },
   },
 
   family: {
@@ -27,17 +26,16 @@ Soft Next Step:
     category: "Family + Children + Milestones",
     description:
       "Refined, warm language focused on preserving meaningful moments with a timeless finish.",
-    content: `Opening:
-“Thank you so much for reaching out. These are the kinds of moments that pass quickly, and I love helping families preserve them in a way that feels beautiful and lasting.”
-
-Guiding the Experience:
-“I keep the process simple and guided so you don’t have to figure everything out on your own. My goal is to make this feel easy while still creating something truly special.”
-
-Positioning the Value:
-“What I create is meant to live beyond the moment itself — as portraits and artwork that hold onto this season for you in a meaningful way.”
-
-Soft Next Step:
-“If you’d like, I can walk you through what the session experience looks like and help you see what would make the most sense for your family.”`,
+    sections: {
+      opener:
+        "Thank you so much for reaching out. These are the kinds of moments that pass quickly, and I love helping families preserve them in a way that feels beautiful and lasting.",
+      guidance:
+        "I keep the process simple and guided so you don’t have to figure everything out on your own. My goal is to make this feel easy while still creating something truly special.",
+      value:
+        "What I create is meant to live beyond the moment itself — as portraits and artwork that hold onto this season for you in a meaningful way.",
+      nextStep:
+        "If you’d like, I can walk you through what the session experience looks like and help you see what would make the most sense for your family.",
+    },
   },
 
   discovery: {
@@ -45,41 +43,33 @@ Soft Next Step:
     category: "Consultation + Client Guidance",
     description:
       "Conversation flow for helping clients feel understood, supported, and gently guided.",
-    content: `Start the Call:
-“I’m so glad we could connect. Before we talk through details, I’d love to hear what’s been on your heart and what made you start thinking about doing this now.”
-
-Discovery Questions:
-- “What are you hoping these portraits will feel like?”
-- “Who are they most for?”
-- “What feels most important about this season right now?”
-- “Have you done something like this before, or would this be a first?”
-
-Guide, Don’t Pitch:
-“That helps so much. Based on what you’re describing, I can already see how we could shape this in a way that feels really true to you.”
-
-Transition:
-“What I’d love to do is walk you through how the experience works so you can get a clear sense of what it would feel like from start to finish.”
-
-Close Gently:
-“If it feels aligned, the next step would simply be choosing a date and moving into the planning process together.”`,
+    sections: {
+      opener:
+        "I’m so glad we could connect. Before we talk through details, I’d love to hear what’s been on your heart and what made you start thinking about doing this now.",
+      guidance:
+        "What are you hoping these portraits will feel like? Who are they most for? What feels most important about this season right now? Have you done something like this before, or would this be a first?",
+      value:
+        "That helps so much. Based on what you’re describing, I can already see how we could shape this in a way that feels really true to you.",
+      nextStep:
+        "What I’d love to do is walk you through how the experience works so you can get a clear sense of what it would feel like from start to finish. If it feels aligned, the next step would simply be choosing a date and moving into the planning process together.",
+    },
   },
 
   objections: {
     title: "Objection Handling",
     category: "Decision Support",
     description:
-      "Thoughtful responses for hesitation around price, spouse, timing, and overwhelm.",
-    content: `Price Concern:
-“I completely understand that. Most clients aren’t ready to make a decision the moment they first reach out — they simply want clarity first. My role is to help you understand the experience so you can decide from a place that feels calm and informed.”
-
-Partner Concern:
-“That makes complete sense. This is something meaningful, and I would want you both to feel good about it. I’m happy to give you a simple overview you can share, and if it’s helpful, I’m always glad to answer questions.”
-
-Overwhelm:
-“I completely understand. That’s actually why I guide the process so closely — so you don’t feel like you have to figure everything out ahead of time.”
-
-Timing:
-“That makes sense too. Sometimes the best next step is simply getting clarity now, and then deciding on timing once it feels right.”`,
+      "Thoughtful responses for hesitation around price, partner input, timing, and overwhelm.",
+    sections: {
+      opener:
+        "I completely understand that. Most clients aren’t ready to make a decision the moment they first reach out — they simply want clarity first.",
+      guidance:
+        "My role is to help you understand the experience so you can decide from a place that feels calm and informed. If you need to talk it through with your partner or sit with it a bit, that makes complete sense.",
+      value:
+        "This is something meaningful, and I would want you to feel good about it rather than rushed into it.",
+      nextStep:
+        "If it’s helpful, I can give you a simple overview you can look over first, and then we can reconnect once it feels like the right time.",
+    },
   },
 
   booking: {
@@ -87,21 +77,21 @@ Timing:
     category: "Moving Forward",
     description:
       "Clear but elegant language for helping clients take the next step without pressure.",
-    content: `Affirm the Fit:
-“Based on everything you’ve shared, this feels like it could be a beautiful fit.”
-
-Make the Next Step Feel Easy:
-“The next step is very simple — we would choose your date, and then I guide you through the planning from there.”
-
-Reassure:
-“You do not need to have everything figured out before moving forward. That’s exactly what I’m here for.”
-
-Invite:
-“If you’re ready, I can help you reserve a date and send over the next details so everything feels clear and easy.”`,
+    sections: {
+      opener:
+        "Based on everything you’ve shared, this feels like it could be a beautiful fit.",
+      guidance:
+        "The next step is very simple — we would choose your date, and then I guide you through the planning from there.",
+      value:
+        "You do not need to have everything figured out before moving forward. That’s exactly what I’m here for.",
+      nextStep:
+        "If you’re ready, I can help you reserve a date and send over the next details so everything feels clear and easy.",
+    },
   },
 };
 
 type ScriptKey = keyof typeof scripts;
+type ScriptSectionKey = "opener" | "guidance" | "value" | "nextStep";
 
 const COACHING_PREFILL_KEY = "tvp-coaching-prefill";
 const STORAGE_KEY = "tvp-response-library";
@@ -135,6 +125,15 @@ function parseCustomTags(input: string): string[] {
   );
 }
 
+function buildFullScript(sections: Record<ScriptSectionKey, string>) {
+  return [
+    sections.opener,
+    sections.guidance,
+    sections.value,
+    sections.nextStep,
+  ].join("\n\n");
+}
+
 export default function ScriptsPage() {
   const router = useRouter();
   const [selectedScript, setSelectedScript] = useState<ScriptKey>("portrait");
@@ -145,14 +144,18 @@ export default function ScriptsPage() {
 
   const activeScript = scripts[selectedScript];
 
-  async function handleCopy() {
-    await navigator.clipboard.writeText(activeScript.content);
-    alert("Script copied.");
+  const fullScript = useMemo(
+    () => buildFullScript(activeScript.sections),
+    [activeScript]
+  );
+
+  async function copyText(text: string, message: string) {
+    await navigator.clipboard.writeText(text);
+    alert(message);
   }
 
   function handleUseInCoaching() {
-    const contentToUse =
-      adaptResult?.adaptedResponse?.trim() || activeScript.content;
+    const contentToUse = adaptResult?.adaptedResponse?.trim() || fullScript;
 
     localStorage.setItem(
       COACHING_PREFILL_KEY,
@@ -182,7 +185,7 @@ export default function ScriptsPage() {
           mode: "adapt-script",
           clientMessage: "adapt-script-request",
           scriptTitle: activeScript.title,
-          scriptContent: activeScript.content,
+          scriptContent: fullScript,
           clientMessageForAdaptation: clientMessage,
         }),
       });
@@ -295,10 +298,10 @@ export default function ScriptsPage() {
 
                 <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={handleCopy}
+                    onClick={() => copyText(fullScript, "Full script copied.")}
                     className="rounded-2xl border border-[#4A3E36] px-4 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                   >
-                    Copy Script
+                    Copy Full Script
                   </button>
 
                   <button
@@ -310,10 +313,38 @@ export default function ScriptsPage() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-3xl border border-[#4A3E36] bg-[#171311] p-6">
-                <p className="whitespace-pre-line leading-8 text-[#F3EDE6]">
-                  {activeScript.content}
-                </p>
+              <div className="mt-6 space-y-4">
+                <ScriptSectionCard
+                  label="Opener"
+                  text={activeScript.sections.opener}
+                  onCopy={() =>
+                    copyText(activeScript.sections.opener, "Opener copied.")
+                  }
+                />
+
+                <ScriptSectionCard
+                  label="Guidance"
+                  text={activeScript.sections.guidance}
+                  onCopy={() =>
+                    copyText(activeScript.sections.guidance, "Guidance copied.")
+                  }
+                />
+
+                <ScriptSectionCard
+                  label="Value"
+                  text={activeScript.sections.value}
+                  onCopy={() =>
+                    copyText(activeScript.sections.value, "Value section copied.")
+                  }
+                />
+
+                <ScriptSectionCard
+                  label="Next Step"
+                  text={activeScript.sections.nextStep}
+                  onCopy={() =>
+                    copyText(activeScript.sections.nextStep, "Next step copied.")
+                  }
+                />
               </div>
             </div>
 
@@ -357,12 +388,12 @@ export default function ScriptsPage() {
                 {adaptResult?.adaptedResponse ? (
                   <>
                     <button
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(
-                          adaptResult.adaptedResponse
-                        );
-                        alert("Adapted response copied.");
-                      }}
+                      onClick={() =>
+                        copyText(
+                          adaptResult.adaptedResponse,
+                          "Adapted response copied."
+                        )
+                      }
                       className="rounded-2xl border border-[#4A3E36] px-5 py-3 text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
                     >
                       Copy Adapted Response
@@ -398,6 +429,33 @@ export default function ScriptsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function ScriptSectionCard({
+  label,
+  text,
+  onCopy,
+}: {
+  label: string;
+  text: string;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="rounded-3xl border border-[#4A3E36] bg-[#171311] p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
+          {label}
+        </h3>
+        <button
+          onClick={onCopy}
+          className="rounded-xl border border-[#4A3E36] px-3 py-2 text-sm text-[#CBBFB3] transition hover:border-[#C6A978] hover:text-white"
+        >
+          Copy
+        </button>
+      </div>
+      <p className="mt-3 whitespace-pre-line text-[#F3EDE6]">{text}</p>
+    </div>
   );
 }
 

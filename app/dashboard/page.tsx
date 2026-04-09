@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "../../utils/supabase/client";
 
 type AnalyzeResult = {
   emotionalNeed: string;
@@ -41,10 +43,31 @@ function parseCustomTags(input: string): string[] {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [authChecked, setAuthChecked] = useState(false);
   const [clientMessage, setClientMessage] = useState("");
   const [customTags, setCustomTags] = useState("");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.replace("/login");
+        return;
+      }
+
+      setAuthChecked(true);
+    }
+
+    checkUser();
+  }, [router, supabase]);
 
   async function handleAnalyze() {
     if (!clientMessage.trim()) return;
@@ -125,6 +148,18 @@ export default function DashboardPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 
     alert("Saved to Response Library.");
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
+        <div className="mx-auto max-w-5xl">
+          <div className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 shadow-2xl">
+            <p className="text-sm text-[#CBBFB3]">Checking access...</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

@@ -7,23 +7,21 @@ export async function POST(req: Request) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     const stripePriceId = process.env.STRIPE_PRICE_ID;
 
-if (!stripeSecretKey || !stripePriceId) {
-  console.error("Stripe env debug", {
-    hasSecret: !!stripeSecretKey,
-    hasPriceId: !!stripePriceId,
-    priceIdLength: stripePriceId?.length ?? 0,
-  });
+    if (!stripeSecretKey) {
+      console.error("Missing STRIPE_SECRET_KEY");
+      return NextResponse.json(
+        { error: "Server configuration error: missing Stripe secret key." },
+        { status: 500 }
+      );
+    }
 
-  return NextResponse.json(
-    {
-      error: "Server configuration error",
-      hasSecret: !!stripeSecretKey,
-      hasPriceId: !!stripePriceId,
-      priceIdLength: stripePriceId?.length ?? 0,
-    },
-    { status: 500 }
-  );
-}
+    if (!stripePriceId) {
+      console.error("Missing STRIPE_PRICE_ID");
+      return NextResponse.json(
+        { error: "Server configuration error: missing Stripe price ID." },
+        { status: 500 }
+      );
+    }
 
     const stripe = new Stripe(stripeSecretKey);
     const supabase = await createSupabaseClient();

@@ -1,28 +1,52 @@
 "use client";
 
-export default function PricingPage() {
-  async function startCheckout() {
-    const res = await fetch("/api/create-checkout-session", {
-      method: "POST",
-    });
+import { useState } from "react";
 
-    const data = await res.json();
-    window.location.href = data.url;
+export default function PricingButton() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleCheckout() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to start checkout.");
+      }
+
+      if (!data.url) {
+        throw new Error("Checkout URL was not returned.");
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#171311] text-white">
-      <div className="p-10 border rounded-2xl">
-        <h1 className="text-3xl">Start Your 7-Day Trial</h1>
-        <p className="mt-2">$29/month (Founding Rate)</p>
+    <div>
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-50"
+      >
+        {loading ? "Redirecting..." : "Start Free Trial"}
+      </button>
 
-        <button
-          onClick={startCheckout}
-          className="mt-6 bg-[#C6A978] px-6 py-3 rounded-xl text-black"
-        >
-          Start Trial
-        </button>
-      </div>
-    </main>
+      {error ? (
+        <p className="mt-3 text-sm text-red-300">{error}</p>
+      ) : null}
+    </div>
   );
 }

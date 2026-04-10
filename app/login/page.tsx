@@ -14,6 +14,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  async function routeBySubscription(userId: string) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", userId)
+      .single();
+
+    const status = profile?.subscription_status;
+
+    if (status === "trialing" || status === "active") {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    router.push("/pricing");
+    router.refresh();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -21,26 +40,35 @@ export default function LoginPage() {
 
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
 
         if (error) throw error;
-        setMessage("Account created. You can sign in now.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
 
-        if (error) throw error;
-        router.push("/dashboard");
-        router.refresh();
+        if (data.user) {
+          router.push("/pricing");
+          router.refresh();
+          return;
+        }
+
+        setMessage("Account created. Please sign in.");
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        await routeBySubscription(data.user.id);
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Something went wrong.";
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
       setMessage(msg);
     } finally {
       setLoading(false);
@@ -48,49 +76,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f3ee] px-6 py-16 text-[#2d241f]">
-      <div className="mx-auto max-w-md rounded-[28px] border border-[#e4d6c5] bg-white p-8 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.28em] text-[#8a6f53]">
+    <main className="min-h-screen bg-[#171311] px-6 py-12 text-[#F3EDE6]">
+      <div className="mx-auto max-w-md rounded-3xl border border-[#4A3E36] bg-[#221C19] p-8 shadow-2xl">
+        <p className="text-xs uppercase tracking-[0.28em] text-[#9D8F83]">
           Client Conversation AI
         </p>
 
-        <h1 className="mt-3 font-serif text-3xl uppercase tracking-[0.04em]">
+        <h1 className="mt-4 font-display text-3xl text-[#F3EDE6]">
           {mode === "login" ? "Welcome Back" : "Create Your Account"}
         </h1>
 
-        <p className="mt-4 text-sm leading-7 text-[#5c4a3b]">
-          Sign in to access the app, or create your account to get started.
+        <p className="mt-3 text-[#CBBFB3]">
+          Sign in to continue, or create your account to begin your trial.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="mb-2 block text-sm">Email</label>
+            <label className="mb-2 block text-sm text-[#F3EDE6]">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border border-[#dccbb8] px-4 py-3 outline-none"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm">Password</label>
+            <label className="mb-2 block text-sm text-[#F3EDE6]">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl border border-[#dccbb8] px-4 py-3 outline-none"
+              className="w-full rounded-2xl border border-[#4A3E36] bg-[#171311] px-4 py-3 text-[#F3EDE6] outline-none"
             />
           </div>
 
-          {message ? <p className="text-sm text-[#8a6f53]">{message}</p> : null}
+          {message ? <p className="text-sm text-[#CBBFB3]">{message}</p> : null}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-[#2d241f] px-6 py-3.5 text-sm uppercase tracking-[0.16em] text-white"
+            className="w-full rounded-2xl bg-[#C6A978] px-5 py-3 font-medium text-black transition hover:bg-[#D7BB8C] disabled:opacity-60"
           >
             {loading
               ? "Please wait..."
@@ -106,13 +134,13 @@ export default function LoginPage() {
             setMode(mode === "login" ? "signup" : "login");
             setMessage("");
           }}
-          className="mt-5 text-sm text-[#7a6048] underline underline-offset-4"
+          className="mt-5 text-sm text-[#CBBFB3] underline underline-offset-4"
         >
           {mode === "login"
             ? "Need an account? Sign up"
             : "Already have an account? Sign in"}
         </button>
       </div>
-    </div>
+    </main>
   );
 }

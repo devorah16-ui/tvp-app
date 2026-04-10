@@ -2,85 +2,67 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#171311] px-6 py-10 text-[#F3EDE6]">
+    <main className="min-h-screen bg-[#171311] px-6 py-12 text-[#F3EDE6]">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-12">
-          <h1 className="font-display text-5xl text-[#F3EDE6]">
-            Client Conversation System
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-[#CBBFB3]">
-            A refined system for understanding clients, guiding conversations,
-            and building meaningful connections that lead to confident
-            decisions.
+        <div className="rounded-[32px] border border-[#4A3E36] bg-[#221C19] p-8 shadow-2xl md:p-12">
+          <p className="text-xs uppercase tracking-[0.28em] text-[#9D8F83]">
+            Client Conversation AI
           </p>
-        </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <Link
-            href="/dashboard"
-            className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 transition hover:border-[#C6A978] hover:bg-[#2B2420]"
-          >
-            <p className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-              01
-            </p>
-            <h2 className="mt-3 font-display text-2xl text-[#F3EDE6]">
-              Lead Analyzer
-            </h2>
-            <p className="mt-3 text-[#CBBFB3]">
-              Understand client intent, identify emotional drivers, and shape a
-              clear next response.
-            </p>
-          </Link>
+          <h1 className="mt-4 max-w-4xl font-display text-4xl leading-tight text-[#F3EDE6] md:text-6xl">
+            Confident client conversations for photographers who want to book
+            with more clarity.
+          </h1>
 
-          <Link
-            href="/testing"
-            className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 transition hover:border-[#C6A978] hover:bg-[#2B2420]"
-          >
-            <p className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-              02
-            </p>
-            <h2 className="mt-3 font-display text-2xl text-[#F3EDE6]">
-              Coaching
-            </h2>
-            <p className="mt-3 text-[#CBBFB3]">
-              Practice real client conversations, refine your wording, and build
-              confidence before replying live.
-            </p>
-          </Link>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-[#CBBFB3]">
+            Analyze client messages, understand emotional drivers, and generate
+            thoughtful responses that move conversations forward without sounding
+            generic, pushy, or uncertain.
+          </p>
 
-          <Link
-            href="/scripts"
-            className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 transition hover:border-[#C6A978] hover:bg-[#2B2420]"
-          >
-            <p className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-              03
-            </p>
-            <h2 className="mt-3 font-display text-2xl text-[#F3EDE6]">
-              Scripts
-            </h2>
-            <p className="mt-3 text-[#CBBFB3]">
-              Keep foundational language for inquiries, objections, and guided
-              next steps in one place.
-            </p>
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/pricing"
+              className="rounded-2xl bg-[#C6A978] px-6 py-3 font-medium text-black transition hover:bg-[#D7BB8C]"
+            >
+              Start Your 7-Day Trial
+            </Link>
 
-          <Link
-            href="/library"
-            className="rounded-3xl border border-[#4A3E36] bg-[#221C19] p-6 transition hover:border-[#C6A978] hover:bg-[#2B2420]"
-          >
-            <p className="text-sm uppercase tracking-[0.25em] text-[#9D8F83]">
-              04
-            </p>
-            <h2 className="mt-3 font-display text-2xl text-[#F3EDE6]">
-              Response Library
-            </h2>
-            <p className="mt-3 text-[#CBBFB3]">
-              Save, organize, and reuse your strongest client responses with
-              clarity.
-            </p>
-          </Link>
+            <Link
+              href="/login"
+              className="rounded-2xl border border-[#4A3E36] px-6 py-3 text-[#F3EDE6] transition hover:border-[#C6A978]"
+            >
+              Sign In
+            </Link>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <FeatureCard
+              title="Client Message Analysis"
+              text="Understand hesitation, emotional need, and decision stage quickly."
+            />
+            <FeatureCard
+              title="Guided Responses"
+              text="Generate calm, natural responses that help move conversations forward."
+            />
+            <FeatureCard
+              title="Built for Photographers"
+              text="Created specifically for portrait and boutique studio workflows."
+            />
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function FeatureCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-3xl border border-[#4A3E36] bg-[#171311] p-5">
+      <h2 className="text-sm uppercase tracking-[0.22em] text-[#9D8F83]">
+        {title}
+      </h2>
+      <p className="mt-3 text-[#CBBFB3]">{text}</p>
+    </div>
   );
 }

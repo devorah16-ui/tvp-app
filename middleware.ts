@@ -1,53 +1,47 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { createClient as createSupabaseClient } from "../../../utils/supabase/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-  const publicRoutes = ["/", "/login", "/pricing"];
+export async function POST(req: Request) {
+  try {
+    const supabase = await createSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const origin = new URL(req.url).origin;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: process.env.STRIPE_PRICE_ID!,
+          quantity: 1,
+        },
+      ],
+      success_url: `${origin}/dashboard?checkout=success`,
+      cancel_url: `${origin}/pricing?checkout=cancelled`,
+      customer_email: user.email,
+      metadata: {
+        user_id: user.id,
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+        },
+      },
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error("create-checkout-session error", error);
+    return NextResponse.json({ error: "Unable to create checkout session" }, { status: 500 });
   }
-
-  const protectedRoutes = [
-    "/lead-analyzer",
-    "/scripts",
-    "/library",
-    "/dashboard",
-    "/testing",
-  ];
-
-  const isProtected = protectedRoutes.some(
-    (route) =>
-      pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  if (!isProtected) return NextResponse.next();
-
-  const token =
-    request.cookies.get("sb-access-token")?.value ||
-    request.cookies.get("supabase-auth-token")?.value;
-
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // 🔥 TEMP: Fake subscription check (we'll replace this next)
-  const hasAccess = request.cookies.get("has-access")?.value;
-
-  if (!hasAccess) {
-    return NextResponse.redirect(new URL("/pricing", request.url));
-  }
-
-  return NextResponse.next();
 }
-
-export const config = {
-  matcher: [
-    "/lead-analyzer/:path*",
-    "/scripts/:path*",
-    "/library/:path*",
-    "/dashboard/:path*",
-    "/testing/:path*",
-  ],
-};

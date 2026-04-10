@@ -8,17 +8,15 @@ export async function POST(req: Request) {
     const stripePriceId = process.env.STRIPE_PRICE_ID;
 
     if (!stripeSecretKey) {
-      console.error("Missing STRIPE_SECRET_KEY");
       return NextResponse.json(
-        { error: "Server configuration error: missing Stripe secret key." },
+        { error: "Missing STRIPE_SECRET_KEY" },
         { status: 500 }
       );
     }
 
     if (!stripePriceId) {
-      console.error("Missing STRIPE_PRICE_ID");
       return NextResponse.json(
-        { error: "Server configuration error: missing Stripe price ID." },
+        { error: "Missing STRIPE_PRICE_ID" },
         { status: 500 }
       );
     }
@@ -52,6 +50,7 @@ export async function POST(req: Request) {
         user_id: user.id,
       },
       subscription_data: {
+        trial_period_days: 7,
         metadata: {
           user_id: user.id,
         },
@@ -61,8 +60,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Stripe Checkout Error:", error);
+
+    if (error instanceof Stripe.errors.StripeError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          type: error.type,
+          code: error.code ?? null,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Unable to create checkout session" },
+      {
+        error: error instanceof Error ? error.message : "Unknown checkout error",
+      },
       { status: 500 }
     );
   }

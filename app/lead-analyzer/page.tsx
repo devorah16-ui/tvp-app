@@ -1,7 +1,7 @@
-import LeadAnalyzerClient from "../../components/LeadAnalyzerClient";
 import { requirePaidAccess } from "../../utils/access";
+import LeadAnalyzerClient from "../../components/LeadAnalyzerClient";
 
-export default async function LeadAnalyzerPage() {
+export default async function Page() {
   await requirePaidAccess();
   return <LeadAnalyzerClient />;
 }

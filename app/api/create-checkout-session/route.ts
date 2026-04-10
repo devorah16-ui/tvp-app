@@ -1,82 +1,91 @@
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient as createSupabaseClient } from "../../../utils/supabase/server";
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
+    return new NextResponse("Missing server configuration", { status: 500 });
+  }
+
+  const stripe = new Stripe(stripeSecretKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+
+  if (!signature) {
+    return new NextResponse("Missing stripe signature", { status: 400 });
+  }
+
+  let event: Stripe.Event;
+
   try {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    const stripePriceId = process.env.STRIPE_PRICE_ID;
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err);
+    return new NextResponse("Invalid signature", { status: 400 });
+  }
 
-    if (!stripeSecretKey) {
-      return NextResponse.json(
-        { error: "Missing STRIPE_SECRET_KEY" },
-        { status: 500 }
-      );
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.metadata?.user_id;
+
+        if (userId) {
+          await supabase.from("subscriptions").upsert(
+            {
+              user_id: userId,
+              subscription_status: "active",
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          );
+        }
+        break;
+      }
+
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.user_id;
+
+        if (userId) {
+          await supabase.from("subscriptions").upsert(
+            {
+              user_id: userId,
+              stripe_subscription_id: subscription.id,
+              stripe_customer_id:
+                typeof subscription.customer === "string"
+                  ? subscription.customer
+                  : subscription.customer?.id ?? null,
+              subscription_status: subscription.status,
+              price_id: subscription.items.data[0]?.price?.id ?? null,
+              current_period_end:
+                typeof subscription.current_period_end === "number"
+                  ? new Date(subscription.current_period_end * 1000).toISOString()
+                  : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          );
+        }
+        break;
+      }
+
+      default:
+        break;
     }
 
-    if (!stripePriceId) {
-      return NextResponse.json(
-        { error: "Missing STRIPE_PRICE_ID" },
-        { status: 500 }
-      );
-    }
-
-    const stripe = new Stripe(stripeSecretKey);
-    const supabase = await createSupabaseClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const origin = new URL(req.url).origin;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price: stripePriceId,
-          quantity: 1,
-        },
-      ],
-      customer_email: user.email ?? undefined,
-      success_url: `${origin}/dashboard?checkout=success`,
-      cancel_url: `${origin}/pricing?checkout=cancelled`,
-      metadata: {
-        user_id: user.id,
-      },
-      subscription_data: {
-        trial_period_days: 7,
-        metadata: {
-          user_id: user.id,
-        },
-      },
-    });
-
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Stripe Checkout Error:", error);
-
-    if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          type: error.type,
-          code: error.code ?? null,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unknown checkout error",
-      },
-      { status: 500 }
-    );
+    console.error("Webhook handler error:", error);
+    return new NextResponse("Webhook handler failed", { status: 500 });
   }
 }

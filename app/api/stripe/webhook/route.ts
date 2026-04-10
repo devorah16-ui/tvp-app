@@ -67,6 +67,10 @@ export async function POST(req: Request) {
                   : subscription.customer?.id ?? null,
               subscription_status: subscription.status,
               price_id: subscription.items.data[0]?.price?.id ?? null,
+              current_period_end:
+                typeof subscription.current_period_end === "number"
+                  ? new Date(subscription.current_period_end * 1000).toISOString()
+                  : null,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "user_id" }
@@ -74,6 +78,9 @@ export async function POST(req: Request) {
         }
         break;
       }
+
+      default:
+        break;
     }
 
     return NextResponse.json({ received: true });

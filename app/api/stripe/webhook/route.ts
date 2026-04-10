@@ -1,6 +1,8 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -8,19 +10,35 @@ export async function POST(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
-    return new NextResponse("Missing server configuration", { status: 500 });
+  if (!stripeSecretKey) {
+    console.error("Missing STRIPE_SECRET_KEY");
+    return new NextResponse("Server configuration error", { status: 500 });
   }
 
-  const stripe = new Stripe(stripeSecretKey);
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  if (!webhookSecret) {
+    console.error("Missing STRIPE_WEBHOOK_SECRET");
+    return new NextResponse("Server configuration error", { status: 500 });
+  }
 
-  const body = await req.text();
+  if (!supabaseUrl) {
+    console.error("Missing NEXT_PUBLIC_SUPABASE_URL");
+    return new NextResponse("Server configuration error", { status: 500 });
+  }
+
+  if (!serviceRoleKey) {
+    console.error("Missing SUPABASE_SERVICE_ROLE_KEY");
+    return new NextResponse("Server configuration error", { status: 500 });
+  }
+
   const signature = req.headers.get("stripe-signature");
 
   if (!signature) {
-    return new NextResponse("Missing stripe signature", { status: 400 });
+    return new NextResponse("Missing stripe-signature header", { status: 400 });
   }
+
+  const body = await req.text();
+  const stripe = new Stripe(stripeSecretKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   let event: Stripe.Event;
 
@@ -35,57 +53,99 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.user_id;
 
-        if (userId) {
-          await supabase.from("subscriptions").upsert(
-            {
-              user_id: userId,
-              subscription_status: "active",
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id" }
-          );
+        const userId = session.metadata?.supabase_user_id;
+        const customerId =
+          typeof session.customer === "string" ? session.customer : null;
+        const subscriptionId =
+          typeof session.subscription === "string" ? session.subscription : null;
+
+        if (!userId) {
+          console.warn("Missing supabase_user_id in checkout session metadata");
+          break;
         }
+
+        const updatePayload = {
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          subscription_status: "active",
+        };
+
+        const { error } = await supabase
+          .from("profiles")
+          .update(updatePayload)
+          .eq("id", userId);
+
+        if (error) {
+          console.error("Failed updating profile on checkout completion:", error);
+          return new NextResponse("Database update failed", { status: 500 });
+        }
+
         break;
       }
 
-      case "customer.subscription.created":
-      case "customer.subscription.updated":
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : null;
+
+        if (!customerId) {
+          console.warn("Missing Stripe customer id on subscription.updated");
+          break;
+        }
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            stripe_subscription_id: subscription.id,
+            subscription_status: subscription.status,
+          })
+          .eq("stripe_customer_id", customerId);
+
+        if (error) {
+          console.error("Failed updating profile on subscription update:", error);
+          return new NextResponse("Database update failed", { status: 500 });
+        }
+
+        break;
+      }
+
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.user_id;
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : null;
 
-        if (userId) {
-          await supabase.from("subscriptions").upsert(
-            {
-              user_id: userId,
-              stripe_subscription_id: subscription.id,
-              stripe_customer_id:
-                typeof subscription.customer === "string"
-                  ? subscription.customer
-                  : subscription.customer?.id ?? null,
-              subscription_status: subscription.status,
-              price_id: subscription.items.data[0]?.price?.id ?? null,
-              current_period_end:
-                typeof subscription.current_period_end === "number"
-                  ? new Date(subscription.current_period_end * 1000).toISOString()
-                  : null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id" }
-          );
+        if (!customerId) {
+          console.warn("Missing Stripe customer id on subscription.deleted");
+          break;
         }
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            subscription_status: "canceled",
+          })
+          .eq("stripe_customer_id", customerId);
+
+        if (error) {
+          console.error("Failed updating profile on subscription deletion:", error);
+          return new NextResponse("Database update failed", { status: 500 });
+        }
+
         break;
       }
 
       default:
-        break;
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
-    return NextResponse.json({ received: true });
+    return new NextResponse("OK", { status: 200 });
   } catch (error) {
-    console.error("Webhook handler error:", error);
+    console.error("Stripe webhook handler error:", error);
     return new NextResponse("Webhook handler failed", { status: 500 });
   }
 }

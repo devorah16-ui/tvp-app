@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createSupabaseClient } from "../../../utils/supabase/server";
 
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   try {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     const stripePriceId = process.env.STRIPE_PRICE_ID;
@@ -34,11 +34,21 @@ export async function POST(req: Request) {
 
     if (userError) {
       console.error("Supabase auth error:", userError);
-      return NextResponse.json({ error: "Authentication failed." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication failed." },
+        { status: 401 }
+      );
     }
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!user.email) {
+      return NextResponse.json(
+        { error: "User email is required to create a checkout session." },
+        { status: 400 }
+      );
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -62,6 +72,13 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    if (!session.url) {
+      return NextResponse.json(
+        { error: "Stripe did not return a checkout URL." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

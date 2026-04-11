@@ -54,57 +54,56 @@ export async function POST(req: Request) {
           return new NextResponse("Missing supabase_user_id", { status: 400 });
         }
 
-        let subscriptionStatus: string | null = "active";
         let trialEndsAt: string | null = null;
         let currentPeriodEnd: string | null = null;
 
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-          subscriptionStatus = subscription.status ?? "active";
-          trialEndsAt = toIsoDate(subscription.trial_end);
+            trialEndsAt = toIsoDate(subscription.trial_end);
 
-          // Safer fallback handling
-          const subscriptionAny = subscription as Stripe.Subscription & {
-            current_period_end?: number;
-          };
+            const subscriptionAny = subscription as Stripe.Subscription & {
+              current_period_end?: number;
+            };
 
-          currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
-
-          console.log("Stripe subscription retrieved:", {
-            subscriptionId: subscription.id,
-            status: subscriptionStatus,
-            trial_end: subscription.trial_end,
-            current_period_end: subscriptionAny.current_period_end ?? null,
-          });
+            currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
+          } catch (err) {
+            console.error("Failed to retrieve subscription, continuing anyway:", err);
+          }
         }
+
+        const forcedStatus = "trialing";
 
         console.log("Updating profile after checkout:", {
           userId,
           customerId,
-          subscriptionStatus,
+          forcedStatus,
           trialEndsAt,
           currentPeriodEnd,
         });
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .update({
             stripe_customer_id: customerId,
-            subscription_status: subscriptionStatus,
+            subscription_status: forcedStatus,
             trial_ends_at: trialEndsAt,
             current_period_end: currentPeriodEnd,
           })
-          .eq("id", userId);
+          .eq("id", userId)
+          .select();
 
         if (error) {
           console.error("Failed to update profile after checkout:", error);
           return new NextResponse("Database error", { status: 500 });
         }
 
+        console.log("Profile updated after checkout:", data);
         break;
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
@@ -121,31 +120,26 @@ export async function POST(req: Request) {
           current_period_end?: number;
         };
 
-        const status = subscription.status ?? null;
+        const status = subscription.status ?? "active";
         const trialEndsAt = toIsoDate(subscription.trial_end);
         const currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
 
-        console.log("Updating profile from subscription event:", {
-          customerId,
-          status,
-          trialEndsAt,
-          currentPeriodEnd,
-        });
-
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .update({
             subscription_status: status,
             trial_ends_at: trialEndsAt,
             current_period_end: currentPeriodEnd,
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_customer_id", customerId)
+          .select();
 
         if (error) {
           console.error("Failed to update profile subscription status:", error);
           return new NextResponse("Database error", { status: 500 });
         }
 
+        console.log("Profile updated from subscription event:", data);
         break;
       }
 

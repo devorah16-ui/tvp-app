@@ -60,10 +60,32 @@ export async function POST(req: Request) {
 
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          subscriptionStatus = subscription.status;
+
+          subscriptionStatus = subscription.status ?? "active";
           trialEndsAt = toIsoDate(subscription.trial_end);
-          currentPeriodEnd = toIsoDate(subscription.items.data[0]?.current_period_end);
+
+          // Safer fallback handling
+          const subscriptionAny = subscription as Stripe.Subscription & {
+            current_period_end?: number;
+          };
+
+          currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
+
+          console.log("Stripe subscription retrieved:", {
+            subscriptionId: subscription.id,
+            status: subscriptionStatus,
+            trial_end: subscription.trial_end,
+            current_period_end: subscriptionAny.current_period_end ?? null,
+          });
         }
+
+        console.log("Updating profile after checkout:", {
+          userId,
+          customerId,
+          subscriptionStatus,
+          trialEndsAt,
+          currentPeriodEnd,
+        });
 
         const { error } = await supabase
           .from("profiles")
@@ -95,9 +117,20 @@ export async function POST(req: Request) {
           return new NextResponse("Missing customer id", { status: 400 });
         }
 
-        const status = subscription.status;
+        const subscriptionAny = subscription as Stripe.Subscription & {
+          current_period_end?: number;
+        };
+
+        const status = subscription.status ?? null;
         const trialEndsAt = toIsoDate(subscription.trial_end);
-        const currentPeriodEnd = toIsoDate(subscription.items.data[0]?.current_period_end);
+        const currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
+
+        console.log("Updating profile from subscription event:", {
+          customerId,
+          status,
+          trialEndsAt,
+          currentPeriodEnd,
+        });
 
         const { error } = await supabase
           .from("profiles")

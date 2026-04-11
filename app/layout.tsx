@@ -1,12 +1,23 @@
-"use server";
+import type { Metadata } from "next";
+import "./globals.css";
+import Header from "@/components/Header";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+export const metadata: Metadata = {
+  title: "Texas Vogue AI",
+  description: "Client conversation studio",
+};
 
-export async function logout() {
-  const supabase = await createClient();
-
-  await supabase.auth.signOut();
-
-  redirect("/login");
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className="min-h-screen bg-[#171311] text-[#F3EDE6]">
+        <Header />
+        {children}
+      </body>
+    </html>
+  );
 }

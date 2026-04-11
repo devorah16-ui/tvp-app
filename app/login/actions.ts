@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "../../utils/supabase/server";
 
 function getRedirectTarget(raw: FormDataEntryValue | null) {
@@ -65,4 +66,30 @@ export async function signUpWithPassword(formData: FormData) {
   }
 
   redirect("/pricing");
+}
+
+export async function sendMagicLink(formData: FormData) {
+  const supabase = await createSupabaseClient();
+  const headerStore = await headers();
+
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    redirect(`/login?error=${encodeURIComponent("Email is required.")}`);
+  }
+
+  const origin = headerStore.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/login?message=${encodeURIComponent("Check your email for your magic link.")}`);
 }

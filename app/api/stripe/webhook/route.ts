@@ -54,52 +54,59 @@ export async function POST(req: Request) {
           return new NextResponse("Missing supabase_user_id", { status: 400 });
         }
 
+        let status = "trialing";
         let trialEndsAt: string | null = null;
         let currentPeriodEnd: string | null = null;
 
         if (subscriptionId) {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-            trialEndsAt = toIsoDate(subscription.trial_end);
+          status = subscription.status ?? "trialing";
+          trialEndsAt = toIsoDate(subscription.trial_end);
 
-            const subscriptionAny = subscription as Stripe.Subscription & {
-              current_period_end?: number;
-            };
+          const subscriptionAny = subscription as Stripe.Subscription & {
+            current_period_end?: number;
+          };
 
-            currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
-          } catch (err) {
-            console.error("Failed to retrieve subscription, continuing anyway:", err);
+          currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
+
+          const { error: subscriptionError } = await supabase
+            .from("subscriptions")
+            .upsert(
+              {
+                user_id: userId,
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscription.id,
+                status,
+                trial_ends_at: trialEndsAt,
+                current_period_end: currentPeriodEnd,
+              },
+              {
+                onConflict: "stripe_subscription_id",
+              }
+            );
+
+          if (subscriptionError) {
+            console.error("Failed to upsert subscriptions row:", subscriptionError);
+            return new NextResponse("Database error", { status: 500 });
           }
         }
 
-        const forcedStatus = "trialing";
-
-        console.log("Updating profile after checkout:", {
-          userId,
-          customerId,
-          forcedStatus,
-          trialEndsAt,
-          currentPeriodEnd,
-        });
-
-        const { data, error } = await supabase
+        const { error: profileError } = await supabase
           .from("profiles")
           .update({
             stripe_customer_id: customerId,
-            subscription_status: forcedStatus,
+            subscription_status: status,
             trial_ends_at: trialEndsAt,
             current_period_end: currentPeriodEnd,
           })
-          .eq("id", userId)
-          .select();
+          .eq("id", userId);
 
-        if (error) {
-          console.error("Failed to update profile after checkout:", error);
+        if (profileError) {
+          console.error("Failed to update profile after checkout:", profileError);
           return new NextResponse("Database error", { status: 500 });
         }
 
-        console.log("Profile updated after checkout:", data);
         break;
       }
 
@@ -116,30 +123,61 @@ export async function POST(req: Request) {
           return new NextResponse("Missing customer id", { status: 400 });
         }
 
+        const status = subscription.status ?? "active";
+        const trialEndsAt = toIsoDate(subscription.trial_end);
+
         const subscriptionAny = subscription as Stripe.Subscription & {
           current_period_end?: number;
         };
 
-        const status = subscription.status ?? "active";
-        const trialEndsAt = toIsoDate(subscription.trial_end);
         const currentPeriodEnd = toIsoDate(subscriptionAny.current_period_end);
 
-        const { data, error } = await supabase
+        const { data: existingProfile, error: profileLookupError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        if (profileLookupError) {
+          console.error("Failed to look up profile by customer id:", profileLookupError);
+          return new NextResponse("Database error", { status: 500 });
+        }
+
+        const { error: subscriptionError } = await supabase
+          .from("subscriptions")
+          .upsert(
+            {
+              user_id: existingProfile?.id ?? null,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscription.id,
+              status,
+              trial_ends_at: trialEndsAt,
+              current_period_end: currentPeriodEnd,
+            },
+            {
+              onConflict: "stripe_subscription_id",
+            }
+          );
+
+        if (subscriptionError) {
+          console.error("Failed to upsert subscription event row:", subscriptionError);
+          return new NextResponse("Database error", { status: 500 });
+        }
+
+        const { error: profileError } = await supabase
           .from("profiles")
           .update({
             subscription_status: status,
             trial_ends_at: trialEndsAt,
             current_period_end: currentPeriodEnd,
           })
-          .eq("stripe_customer_id", customerId)
-          .select();
+          .eq("stripe_customer_id", customerId);
 
-        if (error) {
-          console.error("Failed to update profile subscription status:", error);
+        if (profileError) {
+          console.error("Failed to update profile subscription status:", profileError);
           return new NextResponse("Database error", { status: 500 });
         }
 
-        console.log("Profile updated from subscription event:", data);
         break;
       }
 

@@ -15,34 +15,17 @@ export async function POST(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!stripeSecretKey) {
-    console.error("Missing STRIPE_SECRET_KEY");
-    return new NextResponse("Missing STRIPE_SECRET_KEY", { status: 500 });
-  }
-
-  if (!webhookSecret) {
-    console.error("Missing STRIPE_WEBHOOK_SECRET");
-    return new NextResponse("Missing STRIPE_WEBHOOK_SECRET", { status: 500 });
-  }
-
-  if (!supabaseUrl) {
-    console.error("Missing NEXT_PUBLIC_SUPABASE_URL");
-    return new NextResponse("Missing NEXT_PUBLIC_SUPABASE_URL", { status: 500 });
-  }
-
-  if (!serviceRoleKey) {
-    console.error("Missing SUPABASE_SERVICE_ROLE_KEY");
-    return new NextResponse("Missing SUPABASE_SERVICE_ROLE_KEY", { status: 500 });
+  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
+    console.error("Missing required environment variables");
+    return new NextResponse("Server configuration error", { status: 500 });
   }
 
   const signature = req.headers.get("stripe-signature");
-
   if (!signature) {
     return new NextResponse("Missing stripe-signature header", { status: 400 });
   }
 
   const rawBody = await req.text();
-
   const stripe = new Stripe(stripeSecretKey);
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -67,42 +50,22 @@ export async function POST(req: Request) {
           typeof session.subscription === "string" ? session.subscription : null;
 
         if (!userId) {
-          console.warn("Missing supabase_user_id in checkout.session.completed metadata");
-          break;
+          console.error("Missing supabase_user_id in checkout session metadata");
+          return new NextResponse("Missing supabase_user_id", { status: 400 });
         }
 
-        let subscriptionStatus: string | null = null;
+        let subscriptionStatus: string | null = "active";
         let trialEndsAt: string | null = null;
         let currentPeriodEnd: string | null = null;
 
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
           subscriptionStatus = subscription.status;
           trialEndsAt = toIsoDate(subscription.trial_end);
           currentPeriodEnd = toIsoDate(subscription.items.data[0]?.current_period_end);
-
-          const { error: subError } = await supabase.from("subscriptions").upsert(
-            {
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscription.id,
-              status: subscription.status,
-              trial_ends_at: trialEndsAt,
-              current_period_end: currentPeriodEnd,
-            },
-            {
-              onConflict: "stripe_subscription_id",
-            }
-          );
-
-          if (subError) {
-            console.error("Failed to upsert subscriptions row:", subError);
-            return new NextResponse("Database error", { status: 500 });
-          }
         }
 
-        const { error: profileError } = await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({
             stripe_customer_id: customerId,
@@ -112,8 +75,8 @@ export async function POST(req: Request) {
           })
           .eq("id", userId);
 
-        if (profileError) {
-          console.error("Failed to update profile after checkout:", profileError);
+        if (error) {
+          console.error("Failed to update profile after checkout:", error);
           return new NextResponse("Database error", { status: 500 });
         }
 
@@ -128,57 +91,25 @@ export async function POST(req: Request) {
           typeof subscription.customer === "string" ? subscription.customer : null;
 
         if (!customerId) {
-          console.warn("Missing customer id on subscription event");
-          break;
+          console.error("Missing customer id on subscription event");
+          return new NextResponse("Missing customer id", { status: 400 });
         }
 
-        const subscriptionId = subscription.id;
         const status = subscription.status;
         const trialEndsAt = toIsoDate(subscription.trial_end);
         const currentPeriodEnd = toIsoDate(subscription.items.data[0]?.current_period_end);
 
-        const { data: existingSub, error: lookupError } = await supabase
-          .from("subscriptions")
-          .select("user_id")
-          .eq("stripe_subscription_id", subscriptionId)
-          .maybeSingle();
-
-        if (lookupError) {
-          console.error("Failed to look up subscription:", lookupError);
-          return new NextResponse("Database error", { status: 500 });
-        }
-
-        const { error: subUpdateError } = await supabase.from("subscriptions").upsert(
-          {
-            user_id: existingSub?.user_id ?? null,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            status,
-            trial_ends_at: trialEndsAt,
-            current_period_end: currentPeriodEnd,
-          },
-          {
-            onConflict: "stripe_subscription_id",
-          }
-        );
-
-        if (subUpdateError) {
-          console.error("Failed to upsert subscription update:", subUpdateError);
-          return new NextResponse("Database error", { status: 500 });
-        }
-
-        const { error: profileUpdateError } = await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({
-            stripe_customer_id: customerId,
             subscription_status: status,
             trial_ends_at: trialEndsAt,
             current_period_end: currentPeriodEnd,
           })
           .eq("stripe_customer_id", customerId);
 
-        if (profileUpdateError) {
-          console.error("Failed to update profile subscription status:", profileUpdateError);
+        if (error) {
+          console.error("Failed to update profile subscription status:", error);
           return new NextResponse("Database error", { status: 500 });
         }
 

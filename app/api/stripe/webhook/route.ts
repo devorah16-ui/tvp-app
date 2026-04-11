@@ -10,13 +10,25 @@ export async function POST(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
-    return new NextResponse("WEBHOOK ERROR: missing env vars", { status: 500 });
+  const missingVars = [
+    !stripeSecretKey ? "STRIPE_SECRET_KEY" : null,
+    !webhookSecret ? "STRIPE_WEBHOOK_SECRET" : null,
+    !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : null,
+    !serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+  ].filter(Boolean);
+
+  if (missingVars.length > 0) {
+    return new NextResponse(
+      `WEBHOOK ERROR: missing env vars -> ${missingVars.join(", ")}`,
+      { status: 500 }
+    );
   }
 
   const signature = req.headers.get("stripe-signature");
   if (!signature) {
-    return new NextResponse("WEBHOOK ERROR: missing stripe-signature", { status: 400 });
+    return new NextResponse("WEBHOOK ERROR: missing stripe-signature", {
+      status: 400,
+    });
   }
 
   const rawBody = await req.text();
@@ -29,11 +41,15 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
-    return new NextResponse("WEBHOOK ERROR: invalid signature", { status: 400 });
+    return new NextResponse("WEBHOOK ERROR: invalid signature", {
+      status: 400,
+    });
   }
 
   if (event.type !== "checkout.session.completed") {
-    return new NextResponse(`WEBHOOK OK: ignored ${event.type}`, { status: 200 });
+    return new NextResponse(`WEBHOOK OK: ignored ${event.type}`, {
+      status: 200,
+    });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
@@ -42,7 +58,9 @@ export async function POST(req: Request) {
     typeof session.customer === "string" ? session.customer : null;
 
   if (!userId) {
-    return new NextResponse("WEBHOOK ERROR: missing supabase_user_id", { status: 400 });
+    return new NextResponse("WEBHOOK ERROR: missing supabase_user_id", {
+      status: 400,
+    });
   }
 
   const { data, error } = await supabase
@@ -55,12 +73,15 @@ export async function POST(req: Request) {
     .select("id, email, stripe_customer_id, subscription_status");
 
   if (error) {
-    console.error("Supabase update error:", error);
-    return new NextResponse(`WEBHOOK ERROR: ${error.message}`, { status: 500 });
+    return new NextResponse(`WEBHOOK ERROR: ${error.message}`, {
+      status: 500,
+    });
   }
 
   if (!data || data.length === 0) {
-    return new NextResponse(`WEBHOOK ERROR: no row updated for ${userId}`, { status: 500 });
+    return new NextResponse(`WEBHOOK ERROR: no row updated for ${userId}`, {
+      status: 500,
+    });
   }
 
   return new NextResponse(
